@@ -48,6 +48,11 @@ More examples:
     0xA5 0x08 0x00 0xAD
     0xA5 0x0B 0x86 0x36
 
+    Flow On?
+    A5 08 01 AE
+
+    A5 0B 86 36
+
 #### From Remote
 
     Timestamp: Data
@@ -64,3 +69,11 @@ More examples:
 
     Press - until 35 degrees:
     173.09: A5 04 23 CC
+
+    Heater On:
+    A5 02 01 A8
+    A5 16 00 BB
+
+    Filter On:
+    A5 02 01 A8
+    A5 16 00 BB
