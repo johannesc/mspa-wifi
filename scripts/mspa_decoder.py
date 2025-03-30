@@ -17,6 +17,7 @@ START_BYTE = 0xA5
 CMD_TEMP_REPORT = 0x06
 CMD_FLOW_REPORT = 0x08
 
+CMD_SET_HEATER = 0x01
 CMD_SET_FILTER = 0x02
 CMD_SET_BUBBLE = 0x03
 CMD_SET_TARGET_TEMP = 0x04
@@ -64,13 +65,18 @@ def _decode_packet(data):
     elif command == CMD_SET_UVC:
         enabled = data[2] == 0x01
         if data[2] not in [0, 1]:
-            packet_info += f"Unknown UVC report: {data[2]}"
+            packet_info += f"Unknown UVC command: {data[2]}"
         packet_info += f" Set UVC: {enabled}"
     elif command == CMD_SET_OZONE:
         enabled = data[2] == 0x01
         if data[2] not in [0, 1]:
-            packet_info += f"Unknown ozone report: {data[2]}"
+            packet_info += f"Unknown ozone command: {data[2]}"
         packet_info += f" Ozone enabled: {enabled}"
+    elif command == CMD_SET_HEATER:
+        enabled = data[2] == 0x01
+        if data[2] not in [0, 1]:
+            packet_info += f"Unknown heater command: {data[2]}"
+        packet_info += f" Heater enabled: {enabled}"
     else:
         packet_info += f" Unknown command {_hex_str(data)}"
 
@@ -125,14 +131,14 @@ class PacketReader(threading.Thread):
                     known_packets[data[1]] = packet_str
                     print(
                         colored(
-                            f"{self._port}: {time.time() - start:03.2f}: New packet: {packet_str}",
+                            f"{self._port}: {time.time() - start:03.2f}: New Command: {packet_str}",
                             self._color,
                         )
                     )
                 else:
                     print(
                         colored(
-                            f"{self._port}: {time.time() - start:03.2f}: Old packet: {packet_str}",
+                            f"{self._port}: {time.time() - start:03.2f}: Old Command: {packet_str}",
                             self._color,
                         )
                     )
