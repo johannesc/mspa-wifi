@@ -46,7 +46,16 @@ external_components:
     components: [ mspa_wifi ]
 
 uart:
-  - id: uart_from_box
+  - id: uart_box
+    tx_pin:
+      number: GPIO33
+      inverted: false
+    rx_pin:
+      number: GPIO18
+      inverted: false
+    baud_rate: 9600
+    rx_buffer_size: 512
+  - id: uart_remote
     tx_pin:
       number: GPIO37
       inverted: false
@@ -58,7 +67,8 @@ uart:
 
 mspa_wifi:
   - id: mspa_wifi_1
-    uart_id: uart_from_box
+    uart_box_to_remote_id: uart_box
+    uart_remote_to_box_id: uart_remote
 
 binary_sensor:
   - platform: mspa_wifi
@@ -75,9 +85,30 @@ binary_sensor:
     heater:
       name: "Heater"
 
-text_sensor:
-
 sensor:
   - platform: mspa_wifi
     water_temperature:
       name: "Temperature"
+  - platform: mspa_wifi
+    target_water_temperature:
+      name: "Target Temperature"
+      on_value:
+      - lambda: |-
+          id(target_water_temp).publish_state(x);
+  - platform: mspa_wifi
+    bubble_speed:
+      name: "Bubble Speed"
+number:
+  - platform: template
+    name: "Target water temp"
+    id: target_water_temp
+    min_value: 24
+    max_value: 40
+    step: 1
+    icon: "mdi:thermometer"
+    optimistic: true
+    restore_value: false
+    set_action:
+      - lambda: |-
+          ESP_LOGI("number_template", "New value from HA: %f", x);
+          id(mspa_wifi_1)->set_target_water_temperature(x);

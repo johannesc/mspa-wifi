@@ -5,10 +5,12 @@ from esphome.const import (
     UNIT_CELSIUS,
     DEVICE_CLASS_TEMPERATURE,
     STATE_CLASS_MEASUREMENT,
+    DEVICE_CLASS_EMPTY,
 )
 from . import CONF_MSPA_WIFI_ID, MspaWifiComponent
 
 LOCAL_CONF_WATER_TEMPERATURE = "water_temperature"
+LOCAL_CONF_TARGET_WATER_TEMPERATURE = "target_water_temperature"
 LOCAL_CONF_BUBBLE_SPEED = "bubble_speed"
 
 
@@ -21,6 +23,18 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
+        cv.Optional(LOCAL_CONF_TARGET_WATER_TEMPERATURE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(LOCAL_CONF_BUBBLE_SPEED): sensor.sensor_schema(
+            unit_of_measurement="",
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_EMPTY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
     }
 )
 
@@ -31,6 +45,10 @@ async def to_code(config):
     if LOCAL_CONF_WATER_TEMPERATURE in config:
         sens = await sensor.new_sensor(config[LOCAL_CONF_WATER_TEMPERATURE])
         cg.add(MspaWifi_component.set_water_temperature_sensor(sens))
+
+    if LOCAL_CONF_TARGET_WATER_TEMPERATURE in config:
+        sens = await sensor.new_sensor(config[LOCAL_CONF_TARGET_WATER_TEMPERATURE])
+        cg.add(MspaWifi_component.set_target_water_temperature_sensor(sens))
 
     if LOCAL_CONF_BUBBLE_SPEED in config:
         sens = await sensor.new_sensor(config[LOCAL_CONF_BUBBLE_SPEED])

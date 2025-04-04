@@ -31,7 +31,9 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(LOCAL_CONF_UVC): binary_sensor.binary_sensor_schema(
             icon=ICON_LIGHTBULB,
         ),
-        cv.Optional(LOCAL_CONF_OZONE): binary_sensor.binary_sensor_schema(),
+        cv.Optional(LOCAL_CONF_OZONE): binary_sensor.binary_sensor_schema(
+            icon="mdi:gas-cylinder",
+        ),
         cv.Optional(LOCAL_CONF_HEATER): binary_sensor.binary_sensor_schema(
             icon=ICON_HEATING_COIL,
         ),
