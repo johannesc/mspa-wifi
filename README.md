@@ -180,9 +180,9 @@ More examples:
 | 0x08    | Flow Report (sent each second)  |
 | 0x09    | ?                               |
 | 0x0A    | ?                               |
-| 0x0B    | ?                               |
+| 0x0B    | Sent 1 / min from remote (value 0x00) which replies direct (with value 0x86) |
 | 0x0C    | ?                               |
-| 0x0D    | ?                               |
+| 0x0D    | Sent 8 times / min (7.5 s period) from remote |
 | 0x0E    | Set Ozone                       |
 | 0x0F    | ?                               |
 | 0x10    | ?                               |
@@ -191,5 +191,5 @@ More examples:
 | 0x13    | ?                               |
 | 0x14    | ?                               |
 | 0x15    | Set UVC                         |
-| 0x0F    | ?                               |
-| 0x0F    | ?                               |
+| 0x16    | ?                               |
+| 0x17    | ?                               |

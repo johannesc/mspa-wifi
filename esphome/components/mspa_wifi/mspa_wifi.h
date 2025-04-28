@@ -26,14 +26,27 @@ namespace esphome
           package_start_ = millis();
         }
 
-        void handle_packet(void);
+        bool handle_packet(void);
         void loop(void);
         void set_target_water_temperature(float target);
+        void set_bubble_speed(uint8_t speed);
         void send_packet(const uint8_t *packet);
+        void fill_crc(uint8_t *packet);
 
       private:
         uart::UARTComponent *uart_;
         MspaWifi *mspa_;
+
+        typedef struct {
+          bool heater;
+          bool filter;
+          uint8_t bubble;
+          bool ozone;
+          bool uvc;
+        } mspa_state_t;
+
+        mspa_state_t actual_state_ = {0};
+        uint8_t bubble_remote_ = 0;
 
         enum class states
         {
@@ -76,6 +89,7 @@ namespace esphome
       }
 
       void set_target_water_temperature(float target);
+      void set_bubble_speed(uint8_t speed);
 
     private:
       uart::UARTComponent *box_to_remote_uart_{nullptr};

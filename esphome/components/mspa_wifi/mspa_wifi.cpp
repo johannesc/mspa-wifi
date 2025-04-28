@@ -9,13 +9,14 @@
 #define CMD_TEMP_REPORT 0x06
 #define CMD_FLOW_REPORT 0x08
 
-#define CMD_SET_TARGET_TEMP 0x04
 #define CMD_SET_HEATER 0x01
 #define CMD_SET_FILTER 0x02
 #define CMD_SET_BUBBLE 0x03
 #define CMD_SET_TARGET_TEMP 0x04
 #define CMD_SET_OZONE 0x0E
 #define CMD_SET_UVC 0x15
+#define CMD_SET_UNKNOWN_0D 0x0D
+#define CMD_SET_UNKNOWN_16 0x16
 
 namespace esphome
 {
@@ -25,6 +26,33 @@ namespace esphome
     {
       mspa_box_to_remote_ = new MspaCom(box_to_remote_uart_, this, "-->");
       mspa_remote_to_box_ = new MspaCom(remote_to_box_uart_, this, "<--");
+    }
+
+    void MspaWifi::MspaCom::fill_crc(uint8_t *packet)
+    {
+      uint8_t crc = 0;
+      for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
+      {
+        crc += packet[i];
+      }
+      packet[3] = crc;
+    }
+
+    void MspaWifi::set_bubble_speed(uint8_t speed)
+    {
+      mspa_remote_to_box_->set_bubble_speed(speed);
+    }
+
+    void MspaWifi::MspaCom::set_bubble_speed(uint8_t speed)
+    {
+      // This will be used in handle_packet
+      actual_state_.bubble = speed;
+      mspa_->bubble_speed_sensor_->publish_state(actual_state_.bubble);
+
+      // Also send a packet directly so that bubble speed is updated directly
+      uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_BUBBLE, speed, 0};
+      fill_crc(packet);
+      send_packet(packet);
     }
 
     void MspaWifi::set_target_water_temperature(float target)
@@ -37,25 +65,21 @@ namespace esphome
     {
       ESP_LOGI(TAG, "Set target temp to %f", target);
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_TARGET_TEMP, (uint8_t)target, 0};
-      uint8_t crc = 0;
-      for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
-      {
-        crc += packet[i];
-      }
+      fill_crc(packet);
       send_packet(packet);
     }
 
     void MspaWifi::MspaCom::send_packet(const uint8_t *packet)
     {
+      ESP_LOGI(TAG, "%s: Send packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
       for (int i = 0; i < MSPA_PACKET_LEN; i++)
       {
-        uart_->write_byte(packet_[i]);
+        uart_->write_byte(packet[i]);
       }
     }
 
-    void MspaWifi::MspaCom::handle_packet()
+    bool MspaWifi::MspaCom::handle_packet()
     {
-      ESP_LOGI(TAG, "%s: Packet: %02X %02X %02X %02X", name_, packet_[0], packet_[1], packet_[2], packet_[3]);
       uint8_t crc = 0;
       for (int i; i < (MSPA_PACKET_LEN - 1); i++)
       {
@@ -65,7 +89,7 @@ namespace esphome
       if (crc != packet_[MSPA_PACKET_LEN - 1])
       {
         ESP_LOGE(TAG, "%s: Bad CRC", name_);
-        return;
+        return false;
       }
 
       switch (packet_[1])
@@ -98,6 +122,7 @@ namespace esphome
         bool heater_enabled = packet_[2] == 0x01;
         mspa_->heater_binary_sensor_->publish_state(heater_enabled);
         ESP_LOGI(TAG, "%s: Heater enabled: %s", name_, heater_enabled ? "true" : "false");
+        actual_state_.heater = heater_enabled;
         break;
       }
       case CMD_SET_FILTER:
@@ -105,13 +130,26 @@ namespace esphome
         bool filter_enabled = packet_[2] == 0x01;
         mspa_->filter_pump_binary_sensor_->publish_state(filter_enabled);
         ESP_LOGI(TAG, "%s: Filter enabled: %s", name_, filter_enabled ? "true" : "false");
+        actual_state_.filter = filter_enabled;
         break;
       }
       case CMD_SET_BUBBLE:
       {
         uint8_t bubble_speed = packet_[2];
-        mspa_->bubble_speed_sensor_->publish_state(bubble_speed);
-        ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, bubble_speed);
+
+        if (bubble_speed != bubble_remote_) {
+          // The bubble speed was changed at the remote
+          // The remote is now "in control"
+          bubble_remote_ = bubble_speed;
+          actual_state_.bubble = bubble_speed;
+        } else if (bubble_speed != actual_state_.bubble) {
+          packet_[2] = actual_state_.bubble;
+          fill_crc(packet_);
+          ESP_LOGI(TAG, "%s: Bubble speed is overridden from %d to %d", name_, bubble_speed, actual_state_.bubble);
+        }
+
+        mspa_->bubble_speed_sensor_->publish_state(packet_[2]);
+        ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, packet_[2]);
         break;
       }
       case CMD_SET_OZONE:
@@ -119,6 +157,7 @@ namespace esphome
         bool ozone_enabled = packet_[2] == 0x01;
         mspa_->ozone_binary_sensor_->publish_state(ozone_enabled);
         ESP_LOGI(TAG, "%s: Ozone enabled: %s", name_, ozone_enabled ? "true" : "false");
+        actual_state_.ozone = ozone_enabled;
         break;
       }
       case CMD_SET_UVC:
@@ -126,14 +165,16 @@ namespace esphome
         bool uvc_enabled = packet_[2] == 0x01;
         mspa_->uvc_binary_sensor_->publish_state(uvc_enabled);
         ESP_LOGI(TAG, "%s: UVC enabled: %s", name_, uvc_enabled ? "true" : "false");
+        actual_state_.uvc = uvc_enabled;
         break;
       }
       default:
       {
-        ESP_LOGE(TAG, "%s: Uknown cmd 0x%02X", name_, packet_[1]);
+        ESP_LOGE(TAG, "%s: Unknown packet: %02X %02X %02X %02X", name_, packet_[0], packet_[1], packet_[2], packet_[3]);
         break;
       }
       }
+      return true;
     }
 
     void MspaWifi::MspaCom::loop()
@@ -154,7 +195,6 @@ namespace esphome
       {
         uint8_t data;
         uart_->read_byte(&data);
-        // uart_->write_byte(data);
 
         switch (state_)
         {
@@ -175,8 +215,9 @@ namespace esphome
           {
             state_ = states::WAITING_FOR_START_BYTE;
             bytes_received_ = 0;
-            handle_packet();
-            send_packet(packet_);
+            if (handle_packet()) {
+              send_packet(packet_);
+            }
           }
           break;
         }
