@@ -1,8 +1,63 @@
 # mspa-wifi
 
-This project aims to add WiFi support to my M-Spa Aurora Urban U-AU062.
+This project explains how to add Wi-Fi connectivity to the M-Spa Aurora Urban U-AU062 using ESPHome,
+enabling integration with Home Assistant. This is done by adding an ESP32-S2 module inside the
+remote control that intercepts the traffic between the remote control and control box.
 
-# Initial findings
+# Build your own
+
+## Required Items
+
+ * 1 pcs [S2 Mini V1.0.0 ESP32-S2 module](https://www.amazon.se/dp/B0BGPD6CV5)
+ * 2 pcs [1k Ohm restistor](https://www.amazon.se/dp/B0DWK5KSBF)
+ * [2.54 mm header](https://www.amazon.se/dp/B0DYDBSTGJ)
+ * Connector for the remote
+ * Some cables, soldering iron, glue gun etc.
+
+## Program Your ESP-32 module
+
+Create a esphome/secrets.yaml with content:
+
+```
+wifi_ssid: <Your Wi-Fi SSID>
+wifi_password: <Your Wi-Fi Passoword>
+
+mspa_password: <A password of your choice>
+mspa_api_key: <Home Assistant>
+```
+
+An esphome API key can be created [here](https://esphome.io/components/api.html)
+
+Connect your module using a USB-C cable and program it (press and hold the "O" button while pressing and releasing the RST button to put in programming mode):
+```
+$ pip install esphome
+$ cd esphome
+$ esphome run mspa-wifi.yaml
+```
+## Add the Mspa device to Home Assistant
+
+Go to Settings/Devices & Services/ESPHome and press "ADD DEVICE". If this is your first ESPHome
+device you probably need to add the ESPHome integration first.
+
+For more information see [Connecting your device to Home Assistant](https://esphome.io/guides/getting_started_hassio.html#connecting-your-device-to-home-assistant).
+
+## Modifying your Remote
+
+Below picture shows how to connect your hardware. Everything fits inside the M-Spa remote control
+(it is a bit tight though). The 1 k resistors are used to limit the current as the M-Spa uses 5 v
+while the ESP32-S2 uses 3.3 v.
+
+![image](./images/block-schematic.png)
+
+![image](./images/remote-control-back-modified.jpg)
+![image](./images/remote-control-front-modified.jpg)
+
+## Ready To Use
+
+You should now be ready to control your M-Spa through Home Assistant or through your browser
+at [http://mspa.local/](http://mspa.local/).
+
+# M-Spa protocol and Hardware Description
 
 ## Hardware
 
@@ -19,8 +74,8 @@ The connector to the remote control can be seen in the upper right corner. The p
 | Color | Description                        |
 |-------|------------------------------------|
 | White | GND                                |
-| Green | Rx (remote control to control box) |
-| Black | Tx (control box to remote control) |
+| Green | Tx (control box to remote control) |
+| Black | Rx (remote control to control box) |
 | Red   | +5v                                |
 
 ### Remote Control

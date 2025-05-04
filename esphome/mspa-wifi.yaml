@@ -46,29 +46,29 @@ external_components:
     components: [ mspa_wifi ]
 
 uart:
-  - id: uart_box
-    tx_pin:
+  - id: uart_box_to_remote
+    rx_pin: # green cable to box
       number: GPIO33
       inverted: false
-    rx_pin:
-      number: GPIO18
+    tx_pin: # green cable to remote
+      number: GPIO39
       inverted: false
     baud_rate: 9600
     rx_buffer_size: 512
-  - id: uart_remote
-    tx_pin:
+  - id: uart_remote_to_box
+    rx_pin: # black cable to remote
       number: GPIO37
       inverted: false
-    rx_pin:
-      number: GPIO39
+    tx_pin: # black cable to box
+      number: GPIO18
       inverted: false
     baud_rate: 9600
     rx_buffer_size: 512
 
 mspa_wifi:
   - id: mspa_wifi_1
-    uart_box_to_remote_id: uart_box
-    uart_remote_to_box_id: uart_remote
+    uart_box_to_remote_id: uart_box_to_remote
+    uart_remote_to_box_id: uart_remote_to_box
 
 binary_sensor:
   - platform: mspa_wifi
