@@ -4,10 +4,12 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/core/application.h"
+#ifdef USE_SWITCH
+#include "esphome/components/switch/switch.h"
+#endif
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/uart/uart_component.h"
 
-#define TAG "MspaWifi"
 
 namespace esphome
 {
@@ -30,6 +32,12 @@ namespace esphome
         void loop(void);
         void set_target_water_temperature(float target);
         void set_bubble_speed(uint8_t speed);
+
+        void set_heater(bool enabled);
+        void set_filter(bool enabled);
+        void set_ozone(bool enabled);
+        void set_uvc(bool enabled);
+
         void send_packet(const uint8_t *packet);
         void fill_crc(uint8_t *packet);
 
@@ -46,7 +54,7 @@ namespace esphome
         } mspa_state_t;
 
         mspa_state_t actual_state_ = {0};
-        uint8_t bubble_remote_ = 0;
+        mspa_state_t remote_state_ = {0};
 
         enum class states
         {
@@ -66,14 +74,15 @@ namespace esphome
       SUB_SENSOR(water_temperature);
       SUB_SENSOR(target_water_temperature);
       SUB_SENSOR(bubble_speed);
-      SUB_BINARY_SENSOR(filter_pump);
-      SUB_BINARY_SENSOR(uvc);
-      SUB_BINARY_SENSOR(ozone);
-      SUB_BINARY_SENSOR(heater);
       SUB_BINARY_SENSOR(flow_in);
       SUB_BINARY_SENSOR(flow_out);
 
-      // SUB_SWITCH(bubble_control);
+#ifdef USE_SWITCH
+      SUB_SWITCH(filter_pump);
+      SUB_SWITCH(heater);
+      SUB_SWITCH(uvc);
+      SUB_SWITCH(ozone);
+#endif
 
     public:
       void setup() override;
@@ -90,6 +99,8 @@ namespace esphome
 
       void set_target_water_temperature(float target);
       void set_bubble_speed(uint8_t speed);
+
+      void set_switch_command(uint8_t command_id, bool enabled);
 
     private:
       uart::UARTComponent *box_to_remote_uart_{nullptr};

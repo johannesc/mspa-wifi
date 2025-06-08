@@ -14,7 +14,7 @@ remote control that intercepts the traffic between the remote control and contro
  * Connector for the remote
  * Some cables, soldering iron, glue gun etc.
 
-## Program Your ESP-32 module
+## Program Your ESP-32 module, command line version
 
 Create a esphome/secrets.yaml with content:
 
@@ -40,6 +40,10 @@ Go to Settings/Devices & Services/ESPHome and press "ADD DEVICE". If this is you
 device you probably need to add the ESPHome integration first.
 
 For more information see [Connecting your device to Home Assistant](https://esphome.io/guides/getting_started_hassio.html#connecting-your-device-to-home-assistant).
+
+## If you don't have Home Assistant
+
+Make sure to add `reboot_timeout: 0s` to the `mspa-wifi.yaml` to prevent it from rebooting every 15 minutes.
 
 ## Modifying your Remote
 

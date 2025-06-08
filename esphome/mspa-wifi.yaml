@@ -76,6 +76,9 @@ binary_sensor:
       name: "Flow In"
     flow_out:
       name: "Flow Out"
+
+switch:
+  - platform: mspa_wifi
     filter_pump:
       name: "Filter Pump"
     uvc:
