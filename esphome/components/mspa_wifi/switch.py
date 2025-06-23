@@ -15,17 +15,20 @@ LOCAL_CONF_FILTER_PUMP = "filter_pump"
 LOCAL_CONF_HEATER = "heater"
 LOCAL_CONF_UVC = "uvc"
 LOCAL_CONF_OZONE = "ozone"
+LOCAL_CONF_BUBBLE = "bubble"
 
 _CMD_ID_HEATER = 1
 _CMD_ID_FILTER = 2
-_CMD_ID_UVC = 0x15
+_CMD_ID_UVC = 0x10
 _CMD_ID_OZONE = 0xE
+_CMD_ID_BUBBLE = 0x03
 
 _SWITCHES = {
     LOCAL_CONF_FILTER_PUMP: _CMD_ID_FILTER,
     LOCAL_CONF_HEATER: _CMD_ID_HEATER,
     LOCAL_CONF_UVC: _CMD_ID_UVC,
-    LOCAL_CONF_OZONE: _CMD_ID_OZONE,
+    #LOCAL_CONF_OZONE: _CMD_ID_OZONE,
+    LOCAL_CONF_BUBBLE: _CMD_ID_BUBBLE,
 }
 
 MspaSwitch = mspa_wifi_ns.class_('MspaSwitch', switch.Switch, cg.Component)
@@ -34,7 +37,7 @@ MspaSwitch = mspa_wifi_ns.class_('MspaSwitch', switch.Switch, cg.Component)
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(CONF_MSPA_WIFI_ID): cv.use_id(MspaWifiComponent),
     cv.Optional(LOCAL_CONF_FILTER_PUMP): switch.switch_schema(switch.Switch,
-        icon=ICON_WATER,
+        icon="mdi:pump",
     ).extend({cv.GenerateID(): cv.declare_id(MspaSwitch),}),
     cv.Optional(LOCAL_CONF_HEATER): switch.switch_schema(switch.Switch,
         icon=ICON_HEATING_COIL,
@@ -42,8 +45,11 @@ CONFIG_SCHEMA = cv.Schema({
     cv.Optional(LOCAL_CONF_UVC): switch.switch_schema(switch.Switch,
         icon=ICON_LIGHTBULB,
     ).extend({cv.GenerateID(): cv.declare_id(MspaSwitch),}),
-    cv.Optional(LOCAL_CONF_OZONE): switch.switch_schema(switch.Switch,
-        icon="mdi:gas-cylinder",
+    # cv.Optional(LOCAL_CONF_OZONE): switch.switch_schema(switch.Switch,
+        # icon="mdi:gas-cylinder",
+    # ).extend({cv.GenerateID(): cv.declare_id(MspaSwitch),}),
+    cv.Optional(LOCAL_CONF_BUBBLE): switch.switch_schema(switch.Switch,
+        icon="mdi:fan",
     ).extend({cv.GenerateID(): cv.declare_id(MspaSwitch),}),
 })
 

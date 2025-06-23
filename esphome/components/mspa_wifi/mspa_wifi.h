@@ -37,6 +37,7 @@ namespace esphome
         void set_filter(bool enabled);
         void set_ozone(bool enabled);
         void set_uvc(bool enabled);
+		void set_bubble(bool enabled);
 
         void send_packet(const uint8_t *packet);
         void fill_crc(uint8_t *packet);
@@ -48,9 +49,10 @@ namespace esphome
         typedef struct {
           bool heater;
           bool filter;
-          uint8_t bubble;
+          //uint8_t bubble;
           bool ozone;
           bool uvc;
+		  bool bubble;
         } mspa_state_t;
 
         mspa_state_t actual_state_ = {0};
@@ -82,6 +84,7 @@ namespace esphome
       SUB_SWITCH(heater);
       SUB_SWITCH(uvc);
       SUB_SWITCH(ozone);
+	  SUB_SWITCH(bubble);
 #endif
 
     public:
