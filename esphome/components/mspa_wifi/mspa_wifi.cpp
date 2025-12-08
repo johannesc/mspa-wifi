@@ -157,7 +157,7 @@ namespace esphome
     bool MspaWifi::MspaCom::handle_packet()
     {
       uint8_t crc = 0;
-      for (int i; i < (MSPA_PACKET_LEN - 1); i++)
+      for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
       {
         crc += packet_[i];
       }
