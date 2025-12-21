@@ -68,7 +68,10 @@ namespace esphome
     {
       // This will be used in handle_packet
       actual_state_.bubble = speed;
-      mspa_->bubble_speed_sensor_->publish_state(actual_state_.bubble);
+
+      if (mspa_->target_bubble_speed_number_ != NULL) {
+        mspa_->target_bubble_speed_number_->publish_state(actual_state_.bubble);
+      }
 
       // Also send a packet directly so that bubble speed is updated directly
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_BUBBLE, speed, 0};
@@ -79,7 +82,9 @@ namespace esphome
     void MspaWifi::set_target_water_temperature(float target)
     {
       mspa_remote_to_box_->set_target_water_temperature(target);
-      target_water_temperature_sensor_->publish_state(target);
+      if (target_water_temperature_number_ != NULL) {
+        target_water_temperature_number_->publish_state(target);
+      }
     }
 
     void MspaWifi::MspaCom::set_target_water_temperature(float target)
@@ -138,7 +143,7 @@ namespace esphome
     bool MspaWifi::MspaCom::handle_packet()
     {
       uint8_t crc = 0;
-      for (int i=0; i < (MSPA_PACKET_LEN - 1); i++)
+      for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
       {
         crc += packet_[i];
       }
@@ -170,7 +175,9 @@ namespace esphome
       case CMD_SET_TARGET_TEMP:
       {
         float target_temperature = packet_[2];
-        mspa_->target_water_temperature_sensor_->publish_state(target_temperature);
+        if (mspa_->target_water_temperature_number_ != NULL) {
+          mspa_->target_water_temperature_number_->publish_state(target_temperature);
+        }
         ESP_LOGI(TAG, "%s: Set target temp %f", name_, target_temperature);
         break;
       }
@@ -216,7 +223,9 @@ namespace esphome
           ESP_LOGI(TAG, "%s: Bubble speed is overridden from %d to %d", name_, bubble_speed, actual_state_.bubble);
         }
 
-        mspa_->bubble_speed_sensor_->publish_state(packet_[2]);
+        if (mspa_->target_bubble_speed_number_ != NULL) {
+          mspa_->target_bubble_speed_number_->publish_state(actual_state_.bubble);
+        }
         ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, packet_[2]);
         break;
       }

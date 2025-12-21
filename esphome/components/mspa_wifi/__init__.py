@@ -30,7 +30,6 @@ UART_FROM_BOX_REMOTE_SCHEMA = cv.Schema(
     }
 )
 
-
 CONFIG_SCHEMA = (
     cv.Schema(
         {
@@ -46,10 +45,10 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
 
     await cg.register_component(var, config)
-    #await uart.register_uart_device(var, config)
 
     parent = await cg.get_variable(config[LOCAL_CONF_UART_BOX_TO_REMOTE_ID])
     cg.add(var.set_box_to_remote_uart(parent))
 
     parent = await cg.get_variable(config[LOCAL_CONF_UART_REMOTE_TO_BOX_ID])
     cg.add(var.set_remote_to_box_uart(parent))
+

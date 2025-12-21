@@ -5,7 +5,6 @@ from esphome.components import switch
 from . import CONF_MSPA_WIFI_ID, MspaWifiComponent, mspa_wifi_ns
 
 from esphome.const import (
-    ICON_WATER,
     ICON_HEATING_COIL,
     ICON_LIGHTBULB,
 )
@@ -33,7 +32,7 @@ MspaSwitch = mspa_wifi_ns.class_('MspaSwitch', switch.Switch, cg.Component)
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(CONF_MSPA_WIFI_ID): cv.use_id(MspaWifiComponent),
     cv.Optional(LOCAL_CONF_FILTER_PUMP): switch.switch_schema(switch.Switch,
-        icon=ICON_WATER,
+        icon="mdi:pump",
     ).extend({cv.GenerateID(): cv.declare_id(MspaSwitch),}),
     cv.Optional(LOCAL_CONF_HEATER): switch.switch_schema(switch.Switch,
         icon=ICON_HEATING_COIL,

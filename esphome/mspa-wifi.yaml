@@ -92,41 +92,12 @@ sensor:
   - platform: mspa_wifi
     water_temperature:
       name: "Temperature"
+
+number:
   - platform: mspa_wifi
     target_water_temperature:
       name: "Target Temperature"
-      on_value:
-      - lambda: |-
-          id(target_water_temp).publish_state(x);
   - platform: mspa_wifi
     bubble_speed:
       name: "Bubble Speed"
-      on_value:
-      - lambda: |-
-          id(target_bubble_speed).publish_state(x);
-number:
-  - platform: template
-    name: "Target water temp"
-    id: target_water_temp
-    min_value: 24
-    max_value: 40
-    step: 1
-    icon: "mdi:thermometer"
-    optimistic: true
-    restore_value: false
-    set_action:
-      - lambda: |-
-          ESP_LOGI("number_template", "New value from HA: %f", x);
-          id(mspa_wifi_1)->set_target_water_temperature(x);
-  - platform: template
-    name: "Bubble Speed"
-    id: target_bubble_speed
-    min_value: 0
-    max_value: 3
-    step: 1
-    optimistic: false
-    restore_value: false
-    set_action:
-      - lambda: |-
-          ESP_LOGI("bubble speed template", "New value from HA: %f", x);
-          id(mspa_wifi_1)->set_bubble_speed((uint8_t)x);
+      max_value: 3

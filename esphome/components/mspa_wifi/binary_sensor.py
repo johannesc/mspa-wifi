@@ -27,7 +27,6 @@ async def to_code(config):
     MspaWifi_component = await cg.get_variable(config[CONF_MSPA_WIFI_ID])
 
     if LOCAL_CONF_FLOW_IN in config:
-        print("new bin sens:", config[LOCAL_CONF_FLOW_IN])
         sens = await binary_sensor.new_binary_sensor(config[LOCAL_CONF_FLOW_IN])
         cg.add(MspaWifi_component.set_flow_in_binary_sensor(sens))
 

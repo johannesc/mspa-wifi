@@ -4,12 +4,11 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/core/application.h"
-#ifdef USE_SWITCH
-#include "esphome/components/switch/switch.h"
+#ifdef USE_NUMBER
+#include "esphome/components/number/number.h"
 #endif
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/uart/uart_component.h"
-
 
 namespace esphome
 {
@@ -72,8 +71,6 @@ namespace esphome
       };
 
       SUB_SENSOR(water_temperature);
-      SUB_SENSOR(target_water_temperature);
-      SUB_SENSOR(bubble_speed);
       SUB_BINARY_SENSOR(flow_in);
       SUB_BINARY_SENSOR(flow_out);
 
@@ -91,6 +88,8 @@ namespace esphome
 
       void set_box_to_remote_uart(uart::UARTComponent *box_uart) { this->box_to_remote_uart_ = box_uart; }
       void set_remote_to_box_uart(uart::UARTComponent *remote_uart) { this->remote_to_box_uart_ = remote_uart; }
+      void set_target_water_temperature_number(number::Number *number) { this->target_water_temperature_number_ = number; }
+      void set_target_bubble_speed_number(number::Number *number) { this->target_bubble_speed_number_ = number; }
 
       void set_output_1(bool state)
       {
@@ -105,6 +104,9 @@ namespace esphome
     private:
       uart::UARTComponent *box_to_remote_uart_{nullptr};
       uart::UARTComponent *remote_to_box_uart_{nullptr};
+
+      number::Number *target_water_temperature_number_{nullptr};
+      number::Number *target_bubble_speed_number_{nullptr};
 
       MspaCom *mspa_box_to_remote_{nullptr};
       MspaCom *mspa_remote_to_box_{nullptr};
