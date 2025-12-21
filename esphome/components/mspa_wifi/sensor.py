@@ -21,12 +21,14 @@ CONFIG_SCHEMA = cv.Schema(
             accuracy_decimals=1,
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer",
         ),
         cv.Optional(LOCAL_CONF_TARGET_WATER_TEMPERATURE): sensor.sensor_schema(
             unit_of_measurement=UNIT_CELSIUS,
             accuracy_decimals=0,
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer",
         ),
         cv.Optional(LOCAL_CONF_BUBBLE_SPEED): sensor.sensor_schema(
             unit_of_measurement="",

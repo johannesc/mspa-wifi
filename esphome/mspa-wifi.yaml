@@ -29,7 +29,8 @@ logger:
 api:
   encryption:
     key: "${device_api_key}"
-
+  reboot_timeout: 0s
+   
 ota:
   platform: esphome
   password: "${device_password}"
@@ -37,6 +38,14 @@ ota:
 web_server:
   port: 80
   ota: false
+  version: 3
+  sorting_groups:
+    - id: sorting_group_time
+      name: "Time Settings"
+      sorting_weight: 10
+    - id: sorting_group_controls
+      name: "Controls"
+      sorting_weight: 20
 #  auth:
 #    username: admin
 #    password: "${device_password}"
@@ -65,6 +74,21 @@ uart:
     baud_rate: 9600
     rx_buffer_size: 512
 
+time:
+  - platform: sntp
+    id: system_time
+    timezone: "Europe/Berlin"
+    
+globals:
+  - id: timer_heater_on_hour
+    type: int
+    restore_value: yes
+    initial_value: '9'
+  - id: timer_heater_off_hour
+    type: int
+    restore_value: yes
+    initial_value: '16'
+
 mspa_wifi:
   - id: mspa_wifi_1
     uart_box_to_remote_id: uart_box_to_remote
@@ -76,39 +100,73 @@ binary_sensor:
       name: "Flow In"
     flow_out:
       name: "Flow Out"
-
+      
+text_sensor:
+  - platform: template
+    name: "ESPHome Systemzeit"
+    icon: "mdi:clock-time-four-outline"
+    update_interval: 1s # Jede Sekunde aktualisieren
+    web_server:
+      sorting_group_id: sorting_group_time
+      sorting_weight: -1
+    lambda: |-
+      return id(system_time).now().strftime("%H:%M:%S");
+      
 switch:
   - platform: mspa_wifi
     filter_pump:
-      name: "Filter Pump"
+      name: "Filter Pumpe"
     uvc:
       name: "UVC"
-    ozone:
-      name: "Ozone"
+    #ozone:
+      #name: "Ozone"
     heater:
-      name: "Heater"
+      name: "Heizung"
+    bubble:
+      name: "Bubble"
+  - platform: template
+    name: "Timer Heizung aktiv"
+    id: timer_active
+    icon: "mdi:timer"
+    optimistic: true
+    web_server:
+      sorting_group_id: sorting_group_time
+      sorting_weight: 3
+    restore_mode: ALWAYS_OFF
+  - platform: template
+    name: "Logging AUS"
+    id: debug_logging_switch
+    icon: "mdi:bug-check-outline"
+    optimistic: true
+    web_server:
+      sorting_group_id: sorting_group_time
+      sorting_weight: 2
+    turn_on_action:
+      - logger.set_level: "NONE"
+    turn_off_action:
+      - logger.set_level: "INFO"
 
 sensor:
   - platform: mspa_wifi
     water_temperature:
-      name: "Temperature"
+      name: "Temperatur IST"
   - platform: mspa_wifi
     target_water_temperature:
-      name: "Target Temperature"
+      name: "Temperatur SOLL"
       on_value:
       - lambda: |-
           id(target_water_temp).publish_state(x);
-  - platform: mspa_wifi
-    bubble_speed:
-      name: "Bubble Speed"
-      on_value:
-      - lambda: |-
-          id(target_bubble_speed).publish_state(x);
+  # - platform: mspa_wifi
+    # bubble_speed:
+      # name: "Bubble Speed"
+      # on_value:
+      # - lambda: |-
+          # id(target_bubble_speed).publish_state(x);
 number:
   - platform: template
-    name: "Target water temp"
+    name: "Temperatur SOLL"
     id: target_water_temp
-    min_value: 24
+    min_value: 20
     max_value: 40
     step: 1
     icon: "mdi:thermometer"
@@ -118,15 +176,63 @@ number:
       - lambda: |-
           ESP_LOGI("number_template", "New value from HA: %f", x);
           id(mspa_wifi_1)->set_target_water_temperature(x);
+  # - platform: template
+    # name: "Bubble Speed"
+    # id: target_bubble_speed
+    # min_value: 0
+    # max_value: 1
+    # step: 1
+    # optimistic: false
+    # restore_value: false
+    # set_action:
+      # - lambda: |-
+          # ESP_LOGI("bubble speed template", "New value from HA: %f", x);
+          # id(mspa_wifi_1)->set_bubble_speed((uint8_t)x);
   - platform: template
-    name: "Bubble Speed"
-    id: target_bubble_speed
+    name: "Timer Heizung AN"
     min_value: 0
-    max_value: 3
+    max_value: 23
     step: 1
-    optimistic: false
-    restore_value: false
-    set_action:
+    icon: "mdi:timer"
+    optimistic: true
+    restore_value: true
+    initial_value: 9
+    id: heater_on_hour
+    web_server:
+      sorting_group_id: sorting_group_time
+      sorting_weight: 4
+    on_value:
+      then:
+        - lambda: |-
+            id(timer_heater_on_hour) = (int)x;       
+  - platform: template
+    name: "Timer Heizung AUS"
+    min_value: 0
+    max_value: 23
+    step: 1
+    icon: "mdi:timer"
+    optimistic: true
+    restore_value: true
+    initial_value: 16
+    id: heater_off_hour
+    web_server:
+      sorting_group_id: sorting_group_time
+      sorting_weight: 5
+    on_value:
+      then:
+        - lambda: |-
+            id(timer_heater_off_hour) = (int)x;
+
+interval:
+  - interval: 60s
+    then:
       - lambda: |-
-          ESP_LOGI("bubble speed template", "New value from HA: %f", x);
-          id(mspa_wifi_1)->set_bubble_speed((uint8_t)x);
+          if (id(timer_active).state) {
+            auto t = id(system_time).now();
+            if (t.hour == id(timer_heater_on_hour)) {
+              id(mspa_wifi_1)->set_switch_command(0x01, 1);
+            }
+            if (t.hour == id(timer_heater_off_hour)) {
+              id(mspa_wifi_1)->set_switch_command(0x01, 0);
+            }
+          }
