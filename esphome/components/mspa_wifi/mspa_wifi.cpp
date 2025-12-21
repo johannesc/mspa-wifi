@@ -81,14 +81,14 @@ namespace esphome
     bool MspaWifi::MspaCom::handle_packet()
     {
       uint8_t crc = 0;
-      for (int i; i < (MSPA_PACKET_LEN - 1); i++)
+      for (int i=0; i < (MSPA_PACKET_LEN - 1); i++)
       {
         crc += packet_[i];
       }
 
       if (crc != packet_[MSPA_PACKET_LEN - 1])
       {
-        ESP_LOGE(TAG, "%s: Bad CRC", name_);
+        ESP_LOGE(TAG, "%s: Bad CRC, got 0x%02X, expected 0x%02X", name_, packet_[MSPA_PACKET_LEN - 1], crc);
         return false;
       }
 
