@@ -1,6 +1,5 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.const import CONF_NAME, CONF_ID
 from esphome.components import switch
 
 from . import CONF_MSPA_WIFI_ID, MspaWifiComponent, mspa_wifi_ns
@@ -54,11 +53,3 @@ async def to_code(config):
         var = await switch.new_switch(config[conf])
         cg.add(getattr(MspaWifi_component, f"set_{conf}_switch")(var))
         cg.add(var.set_mspa(MspaWifi_component, cmd_id))
-
-
-    # if LOCAL_CONF_FILTER_PUMP in config:
-    #     cfg = config[LOCAL_CONF_FILTER_PUMP]
-    #     var = await switch.new_switch(cfg)
-    #     cg.add(MspaWifi_component.set_filter_pump_switch(var))
-    #     cg.add(var.set_mspa(MspaWifi_component, _CMD_ID_FILTER))
-

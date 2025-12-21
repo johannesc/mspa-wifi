@@ -4,8 +4,6 @@ from esphome.components import binary_sensor
 
 from esphome.const import (
     ICON_WATER,
-    ICON_HEATING_COIL,
-    ICON_LIGHTBULB,
 )
 from . import CONF_MSPA_WIFI_ID, MspaWifiComponent
 
