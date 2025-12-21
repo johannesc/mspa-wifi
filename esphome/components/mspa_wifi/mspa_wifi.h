@@ -1,14 +1,16 @@
 #pragma once
 
-#include "esphome/core/component.h"
-#include "esphome/components/sensor/sensor.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
-#include "esphome/core/application.h"
-#ifdef USE_NUMBER
 #include "esphome/components/number/number.h"
-#endif
-#include "esphome/components/uart/uart.h"
+#include "esphome/components/sensor/sensor.h"
+#include "esphome/components/switch/switch.h"
 #include "esphome/components/uart/uart_component.h"
+#include "esphome/components/uart/uart.h"
+#include "esphome/core/application.h"
+#include "esphome/core/component.h"
+
+#define CMD_SET_UVC_ALT_1 0x10
+#define CMD_SET_UVC_ALT_2 0x15
 
 namespace esphome
 {
@@ -19,10 +21,11 @@ namespace esphome
       class MspaCom
       {
       public:
-        MspaCom(uart::UARTComponent *uart, MspaWifi *mspa, const char *name)
+        MspaCom(uart::UARTComponent *uart, MspaWifi *mspa, uint8_t uvc_command, const char *name)
         { // Constructor with parameters
           uart_ = uart;
           mspa_ = mspa;
+          uvc_command_ = uvc_command;
           name_ = name;
           package_start_ = millis();
         }
@@ -52,6 +55,8 @@ namespace esphome
           bool uvc;
         } mspa_state_t;
 
+        uint8_t uvc_command_ = 0;
+
         mspa_state_t actual_state_ = {0};
         mspa_state_t remote_state_ = {0};
 
@@ -74,12 +79,10 @@ namespace esphome
       SUB_BINARY_SENSOR(flow_in);
       SUB_BINARY_SENSOR(flow_out);
 
-#ifdef USE_SWITCH
       SUB_SWITCH(filter_pump);
       SUB_SWITCH(heater);
       SUB_SWITCH(uvc);
       SUB_SWITCH(ozone);
-#endif
 
     public:
       void setup() override;
@@ -88,22 +91,23 @@ namespace esphome
 
       void set_box_to_remote_uart(uart::UARTComponent *box_uart) { this->box_to_remote_uart_ = box_uart; }
       void set_remote_to_box_uart(uart::UARTComponent *remote_uart) { this->remote_to_box_uart_ = remote_uart; }
+
       void set_target_water_temperature_number(number::Number *number) { this->target_water_temperature_number_ = number; }
       void set_target_bubble_speed_number(number::Number *number) { this->target_bubble_speed_number_ = number; }
-
-      void set_output_1(bool state)
-      {
-        ESP_LOGI("MyComponent", "Output 1 set to %s", state ? "HIGH" : "LOW");
-      }
+      void set_uvc_command(int command) { this->uvc_command_ = command; }
 
       void set_target_water_temperature(float target);
       void set_bubble_speed(uint8_t speed);
 
-      void set_switch_command(uint8_t command_id, bool enabled);
+      void set_heater(bool enabled);
+      void set_filter(bool enabled);
+      void set_ozone(bool enabled);
+      void set_uvc(bool enabled);
 
     private:
       uart::UARTComponent *box_to_remote_uart_{nullptr};
       uart::UARTComponent *remote_to_box_uart_{nullptr};
+      uint8_t uvc_command_ = CMD_SET_UVC_ALT_2;
 
       number::Number *target_water_temperature_number_{nullptr};
       number::Number *target_bubble_speed_number_{nullptr};

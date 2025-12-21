@@ -14,8 +14,28 @@ namespace esphome
 
         void MspaSwitch::write_state(bool state)
         {
-            ESP_LOGI(TAG, "Wtite state %s", state ? "true" : "false");
-            mspa_->set_switch_command(command_id_, state);
+            switch (switch_type_)
+            {
+            case MspaSwitchType::HEATER:
+                ESP_LOGI(TAG, "Heater enable %s", state ? "true" : "false");
+                mspa_->set_heater(state);
+                break;
+            case MspaSwitchType::FILTER:
+                ESP_LOGI(TAG, "Filter enable %s", state ? "true" : "false");
+                mspa_->set_filter(state);
+                break;
+            case MspaSwitchType::UVC:
+                ESP_LOGI(TAG, "UVC enable %s", state ? "true" : "false");
+                mspa_->set_uvc(state);
+                break;
+            case MspaSwitchType::OZONE:
+                ESP_LOGI(TAG, "Ozone enable %s", state ? "true" : "false");
+                mspa_->set_ozone(state);
+                break;
+            default:
+                break;
+            }
+
             //TODO this should be handled in mspa_wifi component
             // e.g. trying to set ozone when filter_pump is not enabled should fail
             this->publish_state(state);

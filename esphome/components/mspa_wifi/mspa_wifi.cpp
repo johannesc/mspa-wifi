@@ -14,7 +14,6 @@
 #define CMD_SET_BUBBLE 0x03
 #define CMD_SET_TARGET_TEMP 0x04
 #define CMD_SET_OZONE 0x0E
-#define CMD_SET_UVC 0x15
 #define CMD_SET_UNKNOWN_0D 0x0D
 #define CMD_SET_UNKNOWN_16 0x16
 
@@ -26,8 +25,8 @@ namespace esphome
   {
     void MspaWifi::setup()
     {
-      mspa_box_to_remote_ = new MspaCom(box_to_remote_uart_, this, "-->");
-      mspa_remote_to_box_ = new MspaCom(remote_to_box_uart_, this, "<--");
+      mspa_box_to_remote_ = new MspaCom(box_to_remote_uart_, this, uvc_command_, "-->");
+      mspa_remote_to_box_ = new MspaCom(remote_to_box_uart_, this, uvc_command_, "<--");
     }
 
     void MspaWifi::MspaCom::fill_crc(uint8_t *packet)
@@ -45,23 +44,20 @@ namespace esphome
       mspa_remote_to_box_->set_bubble_speed(speed);
     }
 
-    void MspaWifi::set_switch_command(uint8_t command_id, bool enabled)
-    {
-      switch (command_id)
-      {
-        case CMD_SET_HEATER:
-          mspa_remote_to_box_->set_heater(enabled);
-          break;
-        case CMD_SET_FILTER:
-          mspa_remote_to_box_->set_filter(enabled);
-          break;
-        case CMD_SET_OZONE:
-          mspa_remote_to_box_->set_ozone(enabled);
-          break;
-        case CMD_SET_UVC:
-          mspa_remote_to_box_->set_uvc(enabled);
-          break;
-      }
+    void MspaWifi::set_heater(bool enabled) {
+      mspa_remote_to_box_->set_heater(enabled);
+    }
+
+    void MspaWifi::set_filter(bool enabled) {
+      mspa_remote_to_box_->set_filter(enabled);
+    }
+
+    void MspaWifi::set_ozone(bool enabled) {
+      mspa_remote_to_box_->set_ozone(enabled);
+    }
+
+    void MspaWifi::set_uvc(bool enabled) {
+      mspa_remote_to_box_->set_uvc(enabled);
     }
 
     void MspaWifi::MspaCom::set_bubble_speed(uint8_t speed)
@@ -126,7 +122,7 @@ namespace esphome
     {
       ESP_LOGI(TAG, "Set uvc %s", enabled ? "ENABLE" : "DISABLE");
       uint8_t data = enabled ? 1 : 0;
-      uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_UVC, data, 0};
+      uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, uvc_command_, data, 0};
       fill_crc(packet);
       send_packet(packet);
     }
@@ -240,8 +236,14 @@ namespace esphome
         actual_state_.ozone = ozone_enabled;
         break;
       }
-      case CMD_SET_UVC:
+      case CMD_SET_UVC_ALT_1:
+      case CMD_SET_UVC_ALT_2:
       {
+        if (packet_[1] != this->uvc_command_) {
+          ESP_LOGW(TAG, "Warning 'uvc_command: 0x%02X' was specified in yaml, but 0x%02X was received",
+            this->uvc_command_, packet_[1]);
+        }
+
         bool uvc_enabled = packet_[2] == 0x01;
         if (mspa_->uvc_switch_)
         {

@@ -10,6 +10,13 @@ namespace esphome
 {
   namespace mspa_wifi
   {
+    enum class MspaSwitchType
+    {
+      HEATER,
+      FILTER,
+      UVC,
+      OZONE,
+    };
     typedef void (*set_state_func)();
 
     class MspaSwitch : public switch_::Switch, public Component
@@ -19,15 +26,15 @@ namespace esphome
       void write_state(bool state) override;
       void dump_config() override;
 
-      void set_mspa(MspaWifi *mspa, uint8_t command_id)
+      void set_mspa(MspaWifi *mspa, MspaSwitchType switch_type)
       {
         mspa_ = mspa;
-        command_id_ = command_id;
+        switch_type_ = switch_type;
       }
 
     protected:
       MspaWifi *mspa_;
-      uint8_t command_id_;
+      MspaSwitchType switch_type_;
     };
 
   } // namespace mspa_wifi

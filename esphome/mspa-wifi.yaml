@@ -9,6 +9,8 @@ esphome:
 esp32:
   board: lolin_s2_mini
   variant: esp32s2
+  framework:
+    type: esp-idf
 
 wifi:
   ssid: !secret wifi_ssid
@@ -66,38 +68,35 @@ uart:
     rx_buffer_size: 512
 
 mspa_wifi:
-  - id: mspa_wifi_1
-    uart_box_to_remote_id: uart_box_to_remote
-    uart_remote_to_box_id: uart_remote_to_box
+  id: mspa_wifi_1
+  uart_box_to_remote_id: uart_box_to_remote
+  uart_remote_to_box_id: uart_remote_to_box
+  uvc_command: 0x15
 
-binary_sensor:
-  - platform: mspa_wifi
-    flow_in:
-      name: "Flow In"
-    flow_out:
-      name: "Flow Out"
+  # Sensors
+  water_temperature:
+    name: "Temperature"
 
-switch:
-  - platform: mspa_wifi
-    filter_pump:
-      name: "Filter Pump"
-    uvc:
-      name: "UVC"
-    ozone:
-      name: "Ozone"
-    heater:
-      name: "Heater"
+  # Binary sensors
+  flow_in:
+    name: "Flow In"
+  flow_out:
+    name: "Flow Out"
 
-sensor:
-  - platform: mspa_wifi
-    water_temperature:
-      name: "Temperature"
+  # Switches
+  filter_pump:
+    name: "Filter Pump"
+  uvc:
+    name: "UVC"
+  ozone:
+    name: "Ozone"
+  heater:
+    name: "Heater"
 
-number:
-  - platform: mspa_wifi
-    target_water_temperature:
-      name: "Target Temperature"
-  - platform: mspa_wifi
-    bubble_speed:
-      name: "Bubble Speed"
-      max_value: 3
+  # Number controls
+  target_water_temperature:
+    name: "Target Temperature"
+
+  bubble_speed:
+    name: "Bubble Speed"
+    max_value: 3
