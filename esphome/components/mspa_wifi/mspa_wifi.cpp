@@ -45,6 +45,11 @@ namespace esphome
     }
 
     void MspaWifi::set_heater(bool enabled) {
+      if (enabled) {
+        // Heater requires filter pump running, also enable that
+        mspa_remote_to_box_->set_filter(true);
+        filter_pump_switch_->publish_state(true);
+      }
       mspa_remote_to_box_->set_heater(enabled);
     }
 
@@ -53,10 +58,20 @@ namespace esphome
     }
 
     void MspaWifi::set_ozone(bool enabled) {
+      if (enabled) {
+        // Ozone requires filter pump running, also enable that
+        mspa_remote_to_box_->set_filter(true);
+        filter_pump_switch_->publish_state(true);
+      }
       mspa_remote_to_box_->set_ozone(enabled);
     }
 
     void MspaWifi::set_uvc(bool enabled) {
+      if (enabled) {
+        // UVC requires filter pump running, also enable that
+        mspa_remote_to_box_->set_filter(true);
+        filter_pump_switch_->publish_state(true);
+      }
       mspa_remote_to_box_->set_uvc(enabled);
     }
 
