@@ -144,7 +144,7 @@ namespace esphome
 
     void MspaWifi::MspaCom::send_packet(const uint8_t *packet)
     {
-      ESP_LOGI(TAG, "%s: Send packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
+      ESP_LOGD(TAG, "%s: Send packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
       for (int i = 0; i < MSPA_PACKET_LEN; i++)
       {
         uart_->write_byte(packet[i]);
