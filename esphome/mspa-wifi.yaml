@@ -76,6 +76,10 @@ mspa_wifi:
   # Sensors
   water_temperature:
     name: "Temperature"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    accuracy_decimals: 1
 
   # Binary sensors
   flow_in:
