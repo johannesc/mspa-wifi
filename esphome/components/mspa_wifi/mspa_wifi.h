@@ -85,12 +85,11 @@ namespace esphome
       SUB_SWITCH(ozone);
 
     public:
-      void setup() override;
       float get_setup_priority() const override { return setup_priority::LATE; }
       void loop() override;
 
-      void set_box_to_remote_uart(uart::UARTComponent *box_uart) { this->box_to_remote_uart_ = box_uart; }
-      void set_remote_to_box_uart(uart::UARTComponent *remote_uart) { this->remote_to_box_uart_ = remote_uart; }
+      void set_box_to_remote_uart(uart::UARTComponent *box_uart);
+      void set_remote_to_box_uart(uart::UARTComponent *remote_uart);
 
       void set_target_water_temperature_number(number::Number *number) { this->target_water_temperature_number_ = number; }
       void set_target_bubble_speed_number(number::Number *number) { this->target_bubble_speed_number_ = number; }
@@ -105,8 +104,6 @@ namespace esphome
       void set_uvc(bool enabled);
 
     private:
-      uart::UARTComponent *box_to_remote_uart_{nullptr};
-      uart::UARTComponent *remote_to_box_uart_{nullptr};
       uint8_t uvc_command_ = CMD_SET_UVC_ALT_2;
 
       number::Number *target_water_temperature_number_{nullptr};

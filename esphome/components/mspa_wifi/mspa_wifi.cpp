@@ -23,10 +23,12 @@ namespace esphome
 {
   namespace mspa_wifi
   {
-    void MspaWifi::setup()
-    {
-      mspa_box_to_remote_ = new MspaCom(box_to_remote_uart_, this, uvc_command_, "-->");
-      mspa_remote_to_box_ = new MspaCom(remote_to_box_uart_, this, uvc_command_, "<--");
+    void MspaWifi::set_box_to_remote_uart(uart::UARTComponent *box_uart) {
+      mspa_box_to_remote_ = new MspaCom(box_uart, this, uvc_command_, "-->");
+    }
+
+    void MspaWifi::set_remote_to_box_uart(uart::UARTComponent *remote_uart) {
+      mspa_remote_to_box_ = new MspaCom(remote_uart, this, uvc_command_, "<--");
     }
 
     void MspaWifi::MspaCom::fill_crc(uint8_t *packet)
