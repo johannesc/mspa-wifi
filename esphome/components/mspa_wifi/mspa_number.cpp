@@ -16,18 +16,24 @@ namespace esphome
         {
             if (mspa_ == nullptr)
             {
+                ESP_LOGI(TAG, "mspa_ was not set");
                 return;
             }
+            if (value == last_value_)
+            {
+                return;
+            }
+            last_value_ = value;
 
             switch (type_)
             {
             case MspaNumberType::TARGET_TEMP:
-                ESP_LOGI("number_template", "New target temp from HA: %f", value);
+                ESP_LOGI(TAG, "New target temp from HA: %f", value);
                 mspa_->set_target_water_temperature(value);
                 break;
 
             case MspaNumberType::BUBBLE_SPEED:
-                ESP_LOGI("number_template", "New bubble speed from HA: %f", value);
+                ESP_LOGI(TAG, "New bubble speed from HA: %f", value);
                 mspa_->set_bubble_speed(value);
                 break;
             }
@@ -37,7 +43,7 @@ namespace esphome
 
         void MspaNumber::dump_config()
         {
-            ESP_LOGCONFIG(TAG, "number");
+            ESP_LOGCONFIG(TAG, "MspaNumber: %d", type_);
         }
 
     } // namespace mspa_wifi

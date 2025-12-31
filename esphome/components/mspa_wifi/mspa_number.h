@@ -33,6 +33,7 @@ namespace esphome
     protected:
       MspaWifi *mspa_;
       MspaNumberType type_;
+      float last_value_ = -1;
     };
 
   } // namespace mspa_wifi
