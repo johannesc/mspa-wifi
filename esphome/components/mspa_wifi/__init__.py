@@ -11,6 +11,7 @@ from esphome.components import (
 from esphome.const import (
     CONF_ID,
     CONF_MAX_VALUE,
+    CONF_MIN_VALUE,
     DEVICE_CLASS_EMPTY,
     DEVICE_CLASS_TEMPERATURE,
     ICON_FAN,
@@ -77,7 +78,13 @@ TARGET_WATER_TEMPERATURE_SCHEMA = number.number_schema(
     {
         cv.GenerateID(): cv.declare_id(MspaNumber),
     }
+).extend(
+    {
+        cv.GenerateID(): cv.declare_id(MspaNumber),
+        cv.Optional(CONF_MIN_VALUE, default=20): cv.int_range(min=0, max=40),
+    }
 )
+
 
 BUBBLE_SPEED_SCHEMA = (
     number.number_schema(
@@ -85,11 +92,6 @@ BUBBLE_SPEED_SCHEMA = (
         icon=ICON_FAN,
         unit_of_measurement="",
         device_class=DEVICE_CLASS_EMPTY,
-    )
-    .extend(
-        {
-            cv.Optional("max_value"): cv.float_,
-        }
     )
     .extend(
         {
@@ -169,7 +171,7 @@ async def to_code(config):
     if LOCAL_CONF_TARGET_WATER_TEMPERATURE in config:
         num = await number.new_number(
             config[LOCAL_CONF_TARGET_WATER_TEMPERATURE],
-            min_value=0,
+            min_value=config[LOCAL_CONF_TARGET_WATER_TEMPERATURE][CONF_MIN_VALUE],
             max_value=40,
             step=1,
         )
