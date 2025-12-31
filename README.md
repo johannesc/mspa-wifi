@@ -4,6 +4,8 @@ This project explains how to add Wi-Fi connectivity to the M-Spa Aurora Urban U-
 enabling integration with Home Assistant. This is done by adding an ESP32-S2 module inside the
 remote control that intercepts the traffic between the remote control and control box.
 
+![image](./images/mspa-wifi-in-ha.png)
+
 # Build your own
 
 ## Required Items
@@ -15,6 +17,14 @@ remote control that intercepts the traffic between the remote control and contro
  * Some cables, soldering iron, glue gun etc.
 
 ## Program Your ESP-32 module, command line version
+
+Read [Getting Started with the ESPHome Command Line](https://esphome.io/guides/getting_started_command_line/)
+
+Download or clone the repository, e.g.:
+
+```
+git clone https://github.com/johannesc/mspa-wifi.git
+```
 
 Create a esphome/secrets.yaml with content:
 
