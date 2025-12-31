@@ -75,6 +75,7 @@ mspa_wifi:
 
   # Sensors
   water_temperature:
+    id: mspa_water_temperature
     name: "Temperature"
     state_class: "measurement"
     unit_of_measurement: "°C"
@@ -90,17 +91,59 @@ mspa_wifi:
   # Switches
   filter_pump:
     name: "Filter Pump"
+    on_turn_off:
+      climate.control:
+        id: climate_thermostat
+        mode: "OFF"
+
   uvc:
     name: "UVC"
   ozone:
     name: "Ozone"
   heater:
+    id: mspa_heater
     name: "Heater"
 
   # Number controls
   target_water_temperature:
     name: "Target Temperature"
+    id: mpsa_target_temperature
+    min_value: 20
 
   bubble_speed:
     name: "Bubble Speed"
     max_value: 3
+
+sensor:
+  - platform: uptime
+    type: seconds
+    name: Uptime Sensor
+  - platform: internal_temperature
+    name: "Internal Temperature"
+    id: int_temp
+
+climate:
+  - platform: thermostat
+    name: "Pool Controller"
+    id: climate_thermostat
+    sensor: mspa_water_temperature
+    min_heating_off_time: 10s
+    min_heating_run_time: 10s
+    min_idle_time: 10s
+    visual:
+      min_temperature: 20
+      max_temperature: 40
+      temperature_step: 0.5
+    heat_action:
+      - switch.turn_on: mspa_heater
+    idle_action:
+      - switch.turn_off: mspa_heater
+    default_preset: Standby
+    preset:
+      - name: Standby
+        default_target_temperature_low: 30
+      - name: Swim
+        default_target_temperature_low: 40
+    on_state:
+      - lambda: |-
+          id(mpsa_target_temperature).control(x.target_temperature);
