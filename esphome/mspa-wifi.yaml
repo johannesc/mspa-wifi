@@ -100,6 +100,13 @@ mspa_wifi:
     name: "UVC"
   ozone:
     name: "Ozone"
+    id: mspa_ozone_switch
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      - script.execute: mspa_ozone_auto_off
+    on_turn_off:
+      - script.stop: mspa_ozone_auto_off
+
   heater:
     id: mspa_heater
     name: "Heater"
@@ -112,7 +119,33 @@ mspa_wifi:
 
   bubble_speed:
     name: "Bubble Speed"
+    id: mspa_bubble_speed
     max_value: 3
+    on_value:
+      then:
+        - lambda: |-
+            ESP_LOGI("yaml", "on_value: bubble_speed changed to %f", x);
+        - if:
+            condition:
+              lambda: 'return x > 0;'
+            then:
+              - script.execute: mspa_bubble_speed_auto_off
+            else:
+              - script.stop: mspa_bubble_speed_auto_off
+
+script:
+  - id: mspa_bubble_speed_auto_off
+    mode: restart
+    then:
+      - delay: 300s
+      - number.set:
+          id: mspa_bubble_speed
+          value: 0
+  - id: mspa_ozone_auto_off
+    mode: restart
+    then:
+      - delay: 7200s
+      - switch.turn_off: mspa_ozone_switch
 
 sensor:
   - platform: uptime
