@@ -5,6 +5,15 @@ substitutions:
 
 esphome:
   name: ${device_name}
+  on_boot:
+    priority: -100
+    then:
+      - delay: 10s
+      - number.set:
+          id: mspa_bubble_speed
+          value: 0
+      - switch.turn_off: mspa_ozone_switch
+      - switch.turn_on: mspa_uvc_switch
 
 esp32:
   board: lolin_s2_mini
@@ -98,6 +107,8 @@ mspa_wifi:
 
   uvc:
     name: "UVC"
+    id: mspa_uvc_switch
+
   ozone:
     name: "Ozone"
     id: mspa_ozone_switch
