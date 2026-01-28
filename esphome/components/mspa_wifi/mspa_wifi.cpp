@@ -197,6 +197,13 @@ namespace esphome
         if (mspa_->flow_out_binary_sensor_ != NULL) {
           mspa_->flow_out_binary_sensor_->publish_state(flow_out);
         }
+        // Avoid sending flow on if the remote thinks that the filter pump is off
+        // This avoids that the remote control ends up with "f1" error state.
+        if (!mspa_->remote_state_.filter && (flow_in || flow_out)) {
+          ESP_LOGI(TAG, "%s: Remote thinks filter pump is off, send no flow", name_);
+          packet_[2] = 0x00;
+          fill_crc(packet_);
+        }
         break;
       }
       case CMD_SET_TARGET_TEMP:
