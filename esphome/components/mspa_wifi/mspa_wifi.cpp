@@ -8,11 +8,13 @@
 
 #define CMD_TEMP_REPORT 0x06
 #define CMD_FLOW_REPORT 0x08
+#define CMD_TIMER_REPORT 0x0B
 
 #define CMD_SET_HEATER 0x01
 #define CMD_SET_FILTER 0x02
 #define CMD_SET_BUBBLE 0x03
 #define CMD_SET_TARGET_TEMP 0x04
+#define CMD_GET_TIMER 0x0B
 #define CMD_SET_OZONE 0x0E
 #define CMD_SET_UNKNOWN_0D 0x0D
 #define CMD_SET_UNKNOWN_16 0x16
@@ -194,6 +196,11 @@ namespace esphome
         }
         break;
       }
+      case CMD_TIMER_REPORT:
+      {
+        ESP_LOGI(TAG, "%s: Timer report: %02X", name_, packet[2]);
+        break;
+      }
       default:
       {
         ESP_LOGE(TAG, "%s: Unknown packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
@@ -318,6 +325,11 @@ namespace esphome
         }
 
         ESP_LOGI(TAG, "%s: UVC enabled: %s", name_, uvc_enabled ? "true" : "false");
+        break;
+      }
+      case CMD_GET_TIMER:
+      {
+        ESP_LOGI(TAG, "%s: Get timer", name_);
         break;
       }
       default:
