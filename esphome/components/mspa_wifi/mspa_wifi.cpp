@@ -54,9 +54,6 @@ namespace esphome
     }
 
     void MspaWifi::set_filter(bool enabled) {
-      if (filter_pump_switch_ != NULL) {
-        filter_pump_switch_->publish_state(enabled);
-      }
       mspa_remote_to_box_->set_filter(enabled);
     }
 
@@ -81,10 +78,10 @@ namespace esphome
 
     void MspaWifi::MspaCom::set_bubble_speed(uint8_t speed)
     {
-      actual_state_.bubble = speed; // This will be used in handle_packet
+      mspa_->actual_state_.bubble = speed; // This will be used in handle_packet
 
       if (mspa_->target_bubble_speed_number_ != NULL) {
-        mspa_->target_bubble_speed_number_->publish_state(actual_state_.bubble);
+        mspa_->target_bubble_speed_number_->publish_state(mspa_->actual_state_.bubble);
       }
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_BUBBLE, speed, 0};
       fill_crc(packet);
@@ -105,9 +102,9 @@ namespace esphome
     void MspaWifi::MspaCom::set_heater(bool enabled)
     {
       ESP_LOGI(TAG, "Set heater %s", enabled ? "ENABLE" : "DISABLE");
-      actual_state_.heater = enabled; // This will be used in handle_packet
+      mspa_->actual_state_.heater = enabled; // This will be used in handle_packet
       if (mspa_->heater_switch_) {
-        mspa_->heater_switch_->publish_state(actual_state_.heater);
+        mspa_->heater_switch_->publish_state(mspa_->actual_state_.heater);
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_HEATER, data, 0};
@@ -118,9 +115,9 @@ namespace esphome
     void MspaWifi::MspaCom::set_filter(bool enabled)
     {
       ESP_LOGI(TAG, "Set filter %s", enabled ? "ENABLE" : "DISABLE");
-      actual_state_.filter = enabled; // This will be used in handle_packet
+      mspa_->actual_state_.filter = enabled; // This will be used in handle_packet
       if (mspa_->filter_pump_switch_ != NULL) {
-        mspa_->filter_pump_switch_->publish_state(actual_state_.filter);
+        mspa_->filter_pump_switch_->publish_state(mspa_->actual_state_.filter);
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_FILTER, data, 0};
@@ -131,9 +128,9 @@ namespace esphome
     void MspaWifi::MspaCom::set_ozone(bool enabled)
     {
       ESP_LOGI(TAG, "Set ozone %s", enabled ? "ENABLE" : "DISABLE");
-      actual_state_.ozone = enabled; // This will be used in handle_packet
+      mspa_->actual_state_.ozone = enabled; // This will be used in handle_packet
       if (mspa_->ozone_switch_) {
-        mspa_->ozone_switch_->publish_state(actual_state_.ozone);
+        mspa_->ozone_switch_->publish_state(mspa_->actual_state_.ozone);
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_OZONE, data, 0};
@@ -144,9 +141,9 @@ namespace esphome
     void MspaWifi::MspaCom::set_uvc(bool enabled)
     {
       ESP_LOGI(TAG, "Set uvc %s", enabled ? "ENABLE" : "DISABLE");
-      actual_state_.uvc = enabled; // This will be used in handle_packet
+      mspa_->actual_state_.uvc = enabled; // This will be used in handle_packet
       if (mspa_->uvc_switch_) {
-        mspa_->uvc_switch_->publish_state(actual_state_.uvc);
+        mspa_->uvc_switch_->publish_state(mspa_->actual_state_.uvc);
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, uvc_command_, data, 0};
@@ -215,54 +212,55 @@ namespace esphome
       {
         bool heater_enabled = packet_[2] == 0x01;
 
-        if (heater_enabled != remote_state_.heater) {
+        if (heater_enabled != mspa_->remote_state_.heater) {
           // The heater has changed at the remote
           // The remote is now "in control"
-          remote_state_.heater = heater_enabled;
-          actual_state_.heater = heater_enabled;
+          mspa_->remote_state_.heater = heater_enabled;
+          mspa_->actual_state_.heater = heater_enabled;
           if (mspa_->heater_switch_) {
-            mspa_->heater_switch_->publish_state(actual_state_.heater);
+            mspa_->heater_switch_->publish_state(mspa_->actual_state_.heater);
           }
-        } else if (heater_enabled != actual_state_.heater) {
-          packet_[2] = actual_state_.heater;
+        } else if (heater_enabled != mspa_->actual_state_.heater) {
+          packet_[2] = mspa_->actual_state_.heater;
           fill_crc(packet_);
         }
-        ESP_LOGI(TAG, "%s: Heater enabled: %s", name_, actual_state_.heater ? "true" : "false");
+        ESP_LOGI(TAG, "%s: Heater enabled: %s", name_, mspa_->actual_state_.heater ? "true" : "false");
         break;
       }
       case CMD_SET_FILTER:
       {
         bool filter_enabled = packet_[2] == 0x01;
-        if (filter_enabled != remote_state_.filter) {
+        if (filter_enabled != mspa_->remote_state_.filter) {
           // The filter has changed at the remote
           // The remote is now "in control"
-          remote_state_.filter = filter_enabled;
-          actual_state_.filter = filter_enabled;
+          mspa_->remote_state_.filter = filter_enabled;
+          mspa_->actual_state_.filter = filter_enabled;
           if (mspa_->filter_pump_switch_ != NULL) {
-            mspa_->filter_pump_switch_->publish_state(actual_state_.filter);
+            mspa_->filter_pump_switch_->publish_state(mspa_->actual_state_.filter);
           }
-        } else if (filter_enabled != actual_state_.filter) {
-          packet_[2] = actual_state_.filter;
+        } else if (filter_enabled != mspa_->actual_state_.filter) {
+          // Overwrite command from the remote with the one set in HA
+          packet_[2] = mspa_->actual_state_.filter;
           fill_crc(packet_);
         }
 
-        ESP_LOGI(TAG, "%s: Filter enabled: %s", name_, actual_state_.filter ? "true" : "false");
+        ESP_LOGI(TAG, "%s: Filter enabled: %s", name_, mspa_->actual_state_.filter ? "true" : "false");
         break;
       }
       case CMD_SET_BUBBLE:
       {
         uint8_t bubble_speed = packet_[2];
 
-        if (bubble_speed != remote_state_.bubble) {
+        if (bubble_speed != mspa_->remote_state_.bubble) {
           // The bubble speed was changed at the remote
           // The remote is now "in control"
-          remote_state_.bubble = bubble_speed;
-          actual_state_.bubble = bubble_speed;
+          mspa_->remote_state_.bubble = bubble_speed;
+          mspa_->actual_state_.bubble = bubble_speed;
           if (mspa_->target_bubble_speed_number_ != NULL) {
-            mspa_->target_bubble_speed_number_->publish_state(actual_state_.bubble);
+            mspa_->target_bubble_speed_number_->publish_state(mspa_->actual_state_.bubble);
           }
-        } else if (bubble_speed != actual_state_.bubble) {
-          packet_[2] = actual_state_.bubble;
+        } else if (bubble_speed != mspa_->actual_state_.bubble) {
+          packet_[2] = mspa_->actual_state_.bubble;
           fill_crc(packet_);
         }
         ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, packet_[2]);
@@ -271,19 +269,19 @@ namespace esphome
       case CMD_SET_OZONE:
       {
         bool ozone_enabled = packet_[2] == 0x01;
-        if (ozone_enabled != remote_state_.ozone) {
+        if (ozone_enabled != mspa_->remote_state_.ozone) {
           // The bubble speed was changed at the remote
           // The remote is now "in control"
-          remote_state_.ozone = ozone_enabled;
-          actual_state_.ozone = ozone_enabled;
+          mspa_->remote_state_.ozone = ozone_enabled;
+          mspa_->actual_state_.ozone = ozone_enabled;
           if (mspa_->ozone_switch_) {
-            mspa_->ozone_switch_->publish_state(actual_state_.ozone);
+            mspa_->ozone_switch_->publish_state(mspa_->actual_state_.ozone);
           }
-        } else if (ozone_enabled != actual_state_.ozone) {
-          packet_[2] = actual_state_.ozone;
+        } else if (ozone_enabled != mspa_->actual_state_.ozone) {
+          packet_[2] = mspa_->actual_state_.ozone;
           fill_crc(packet_);
         }
-        ESP_LOGI(TAG, "%s: Ozone enabled: %s", name_, actual_state_.ozone ? "true" : "false");
+        ESP_LOGI(TAG, "%s: Ozone enabled: %s", name_, mspa_->actual_state_.ozone ? "true" : "false");
         break;
       }
       case CMD_SET_UVC_ALT_1:
@@ -295,16 +293,16 @@ namespace esphome
         }
 
         bool uvc_enabled = packet_[2] == 0x01;
-        if (uvc_enabled != remote_state_.uvc) {
+        if (uvc_enabled != mspa_->remote_state_.uvc) {
           // UVC was changed as the remote
           // the remote if now "in control"
-          remote_state_.uvc = uvc_enabled;
-          actual_state_.uvc = uvc_enabled;
+          mspa_->remote_state_.uvc = uvc_enabled;
+          mspa_->actual_state_.uvc = uvc_enabled;
           if (mspa_->uvc_switch_) {
-            mspa_->uvc_switch_->publish_state(actual_state_.uvc);
+            mspa_->uvc_switch_->publish_state(mspa_->actual_state_.uvc);
           }
         } else {
-          packet_[2] = actual_state_.uvc ? 0x01 : 0x00;
+          packet_[2] = mspa_->actual_state_.uvc ? 0x01 : 0x00;
           fill_crc(packet_);
         }
 

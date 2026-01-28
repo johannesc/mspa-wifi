@@ -47,18 +47,7 @@ namespace esphome
         uart::UARTComponent *uart_;
         MspaWifi *mspa_;
 
-        typedef struct {
-          bool heater;
-          bool filter;
-          uint8_t bubble;
-          bool ozone;
-          bool uvc;
-        } mspa_state_t;
-
         uint8_t uvc_command_ = 0;
-
-        mspa_state_t actual_state_ = {0};
-        mspa_state_t remote_state_ = {0};
 
         enum class states
         {
@@ -74,10 +63,21 @@ namespace esphome
         uint8_t packet_[4];
         const char *name_{nullptr};
       };
+      typedef struct {
+        bool heater;
+        bool filter;
+        uint8_t bubble;
+        bool ozone;
+        bool uvc;
+      } mspa_state_t;
+
+      mspa_state_t actual_state_ = {0};
+      mspa_state_t remote_state_ = {0};
 
       SUB_SENSOR(water_temperature);
       SUB_BINARY_SENSOR(flow_in);
       SUB_BINARY_SENSOR(flow_out);
+      SUB_BINARY_SENSOR(remote_filter_pump);
 
       SUB_SWITCH(filter_pump);
       SUB_SWITCH(heater);
