@@ -24,11 +24,11 @@ namespace esphome
   namespace mspa_wifi
   {
     void MspaWifi::set_box_to_remote_uart(uart::UARTComponent *box_uart) {
-      mspa_box_to_remote_ = new MspaCom(box_uart, this, uvc_command_, "-->");
+      mspa_box_to_remote_ = new MspaBoxToRemoteCom(box_uart, this, "-->");
     }
 
     void MspaWifi::set_remote_to_box_uart(uart::UARTComponent *remote_uart) {
-      mspa_remote_to_box_ = new MspaCom(remote_uart, this, uvc_command_, "<--");
+      mspa_remote_to_box_ = new MspaRemoteToBoxCom(remote_uart, this, uvc_command_, "<--");
     }
 
     void MspaWifi::MspaCom::fill_crc(uint8_t *packet)
@@ -76,7 +76,7 @@ namespace esphome
       mspa_remote_to_box_->set_target_water_temperature(target);
     }
 
-    void MspaWifi::MspaCom::set_bubble_speed(uint8_t speed)
+    void MspaWifi::MspaRemoteToBoxCom::set_bubble_speed(uint8_t speed)
     {
       mspa_->actual_state_.bubble = speed; // This will be used in handle_packet
 
@@ -88,7 +88,7 @@ namespace esphome
       send_packet(packet);
     }
 
-    void MspaWifi::MspaCom::set_target_water_temperature(float target)
+    void MspaWifi::MspaRemoteToBoxCom::set_target_water_temperature(float target)
     {
       ESP_LOGI(TAG, "Set target temp to %f", target);
       if (mspa_->target_water_temperature_number_ != NULL) {
@@ -99,7 +99,7 @@ namespace esphome
       send_packet(packet);
     }
 
-    void MspaWifi::MspaCom::set_heater(bool enabled)
+    void MspaWifi::MspaRemoteToBoxCom::set_heater(bool enabled)
     {
       ESP_LOGI(TAG, "Set heater %s", enabled ? "ENABLE" : "DISABLE");
       mspa_->actual_state_.heater = enabled; // This will be used in handle_packet
@@ -112,7 +112,7 @@ namespace esphome
       send_packet(packet);
     }
 
-    void MspaWifi::MspaCom::set_filter(bool enabled)
+    void MspaWifi::MspaRemoteToBoxCom::set_filter(bool enabled)
     {
       ESP_LOGI(TAG, "Set filter %s", enabled ? "ENABLE" : "DISABLE");
       mspa_->actual_state_.filter = enabled; // This will be used in handle_packet
@@ -125,7 +125,7 @@ namespace esphome
       send_packet(packet);
     }
 
-    void MspaWifi::MspaCom::set_ozone(bool enabled)
+    void MspaWifi::MspaRemoteToBoxCom::set_ozone(bool enabled)
     {
       ESP_LOGI(TAG, "Set ozone %s", enabled ? "ENABLE" : "DISABLE");
       mspa_->actual_state_.ozone = enabled; // This will be used in handle_packet
@@ -138,7 +138,7 @@ namespace esphome
       send_packet(packet);
     }
 
-    void MspaWifi::MspaCom::set_uvc(bool enabled)
+    void MspaWifi::MspaRemoteToBoxCom::set_uvc(bool enabled)
     {
       ESP_LOGI(TAG, "Set uvc %s", enabled ? "ENABLE" : "DISABLE");
       mspa_->actual_state_.uvc = enabled; // This will be used in handle_packet
@@ -161,25 +161,13 @@ namespace esphome
       }
     }
 
-    bool MspaWifi::MspaCom::handle_packet()
+    void MspaWifi::MspaBoxToRemoteCom::handle_packet(uint8_t *packet)
     {
-      uint8_t crc = 0;
-      for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
-      {
-        crc += packet_[i];
-      }
-
-      if (crc != packet_[MSPA_PACKET_LEN - 1])
-      {
-        ESP_LOGE(TAG, "%s: Bad CRC, got 0x%02X, expected 0x%02X", name_, packet_[MSPA_PACKET_LEN - 1], crc);
-        return false;
-      }
-
-      switch (packet_[1])
+      switch (packet[1])
       {
       case CMD_TEMP_REPORT:
       {
-        float water_temperature = (float)packet_[2] / 2.0f;
+        float water_temperature = (float)packet[2] / 2.0f;
         ESP_LOGI(TAG, "%s: Water temp report %f", name_, water_temperature);
         if (mspa_->water_temperature_sensor_ != NULL) {
           mspa_->water_temperature_sensor_->publish_state(water_temperature);
@@ -188,8 +176,8 @@ namespace esphome
       }
       case CMD_FLOW_REPORT:
       {
-        bool flow_in = (packet_[2] & 0x01) != 0;
-        bool flow_out = (packet_[2] & 0x02) != 0;
+        bool flow_in = (packet[2] & 0x01) != 0;
+        bool flow_out = (packet[2] & 0x02) != 0;
         ESP_LOGI(TAG, "%s: Flow in: %s, out: %s", name_, flow_in ? "On" : "Off", flow_out ? "On" : "Off");
         if (mspa_->flow_in_binary_sensor_ != NULL) {
           mspa_->flow_in_binary_sensor_->publish_state(flow_in);
@@ -201,14 +189,30 @@ namespace esphome
         // This avoids that the remote control ends up with "f1" error state.
         if (!mspa_->remote_state_.filter && (flow_in || flow_out)) {
           ESP_LOGI(TAG, "%s: Remote thinks filter pump is off, send no flow", name_);
-          packet_[2] = 0x00;
-          fill_crc(packet_);
+          packet[2] = 0x00;
+          fill_crc(packet);
         }
         break;
       }
+      default:
+      {
+        ESP_LOGE(TAG, "%s: Unknown packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
+        break;
+      }
+      }
+
+      // Pass it through to the remote
+      send_packet(packet);
+    }
+
+
+    void MspaWifi::MspaRemoteToBoxCom::handle_packet(uint8_t *packet)
+    {
+      switch (packet[1])
+      {
       case CMD_SET_TARGET_TEMP:
       {
-        float target_temperature = packet_[2];
+        float target_temperature = packet[2];
         if (mspa_->target_water_temperature_number_ != NULL) {
           mspa_->target_water_temperature_number_->publish_state(target_temperature);
         }
@@ -217,7 +221,7 @@ namespace esphome
       }
       case CMD_SET_HEATER:
       {
-        bool heater_enabled = packet_[2] == 0x01;
+        bool heater_enabled = packet[2] == 0x01;
 
         if (heater_enabled != mspa_->remote_state_.heater) {
           // The heater has changed at the remote
@@ -228,15 +232,15 @@ namespace esphome
             mspa_->heater_switch_->publish_state(mspa_->actual_state_.heater);
           }
         } else if (heater_enabled != mspa_->actual_state_.heater) {
-          packet_[2] = mspa_->actual_state_.heater;
-          fill_crc(packet_);
+          packet[2] = mspa_->actual_state_.heater;
+          fill_crc(packet);
         }
         ESP_LOGI(TAG, "%s: Heater enabled: %s", name_, mspa_->actual_state_.heater ? "true" : "false");
         break;
       }
       case CMD_SET_FILTER:
       {
-        bool filter_enabled = packet_[2] == 0x01;
+        bool filter_enabled = packet[2] == 0x01;
         if (filter_enabled != mspa_->remote_state_.filter) {
           // The filter has changed at the remote
           // The remote is now "in control"
@@ -247,8 +251,8 @@ namespace esphome
           }
         } else if (filter_enabled != mspa_->actual_state_.filter) {
           // Overwrite command from the remote with the one set in HA
-          packet_[2] = mspa_->actual_state_.filter;
-          fill_crc(packet_);
+          packet[2] = mspa_->actual_state_.filter;
+          fill_crc(packet);
         }
 
         ESP_LOGI(TAG, "%s: Filter enabled: %s", name_, mspa_->actual_state_.filter ? "true" : "false");
@@ -256,7 +260,7 @@ namespace esphome
       }
       case CMD_SET_BUBBLE:
       {
-        uint8_t bubble_speed = packet_[2];
+        uint8_t bubble_speed = packet[2];
 
         if (bubble_speed != mspa_->remote_state_.bubble) {
           // The bubble speed was changed at the remote
@@ -267,15 +271,15 @@ namespace esphome
             mspa_->target_bubble_speed_number_->publish_state(mspa_->actual_state_.bubble);
           }
         } else if (bubble_speed != mspa_->actual_state_.bubble) {
-          packet_[2] = mspa_->actual_state_.bubble;
-          fill_crc(packet_);
+          packet[2] = mspa_->actual_state_.bubble;
+          fill_crc(packet);
         }
-        ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, packet_[2]);
+        ESP_LOGI(TAG, "%s: Bubble speed: %d", name_, packet[2]);
         break;
       }
       case CMD_SET_OZONE:
       {
-        bool ozone_enabled = packet_[2] == 0x01;
+        bool ozone_enabled = packet[2] == 0x01;
         if (ozone_enabled != mspa_->remote_state_.ozone) {
           // The bubble speed was changed at the remote
           // The remote is now "in control"
@@ -285,8 +289,8 @@ namespace esphome
             mspa_->ozone_switch_->publish_state(mspa_->actual_state_.ozone);
           }
         } else if (ozone_enabled != mspa_->actual_state_.ozone) {
-          packet_[2] = mspa_->actual_state_.ozone;
-          fill_crc(packet_);
+          packet[2] = mspa_->actual_state_.ozone;
+          fill_crc(packet);
         }
         ESP_LOGI(TAG, "%s: Ozone enabled: %s", name_, mspa_->actual_state_.ozone ? "true" : "false");
         break;
@@ -294,12 +298,12 @@ namespace esphome
       case CMD_SET_UVC_ALT_1:
       case CMD_SET_UVC_ALT_2:
       {
-        if (packet_[1] != this->uvc_command_) {
+        if (packet[1] != this->uvc_command_) {
           ESP_LOGW(TAG, "Warning 'uvc_command: 0x%02X' was specified in yaml, but 0x%02X was received",
-            this->uvc_command_, packet_[1]);
+            this->uvc_command_, packet[1]);
         }
 
-        bool uvc_enabled = packet_[2] == 0x01;
+        bool uvc_enabled = packet[2] == 0x01;
         if (uvc_enabled != mspa_->remote_state_.uvc) {
           // UVC was changed as the remote
           // the remote if now "in control"
@@ -309,8 +313,8 @@ namespace esphome
             mspa_->uvc_switch_->publish_state(mspa_->actual_state_.uvc);
           }
         } else {
-          packet_[2] = mspa_->actual_state_.uvc ? 0x01 : 0x00;
-          fill_crc(packet_);
+          packet[2] = mspa_->actual_state_.uvc ? 0x01 : 0x00;
+          fill_crc(packet);
         }
 
         ESP_LOGI(TAG, "%s: UVC enabled: %s", name_, uvc_enabled ? "true" : "false");
@@ -318,11 +322,13 @@ namespace esphome
       }
       default:
       {
-        ESP_LOGE(TAG, "%s: Unknown packet: %02X %02X %02X %02X", name_, packet_[0], packet_[1], packet_[2], packet_[3]);
+        ESP_LOGE(TAG, "%s: Unknown packet: %02X %02X %02X %02X", name_, packet[0], packet[1], packet[2], packet[3]);
         break;
       }
       }
-      return true;
+
+      // Pass it trhough to the remote
+      send_packet(packet);
     }
 
     void MspaWifi::MspaCom::loop()
@@ -361,11 +367,21 @@ namespace esphome
           packet_[bytes_received_++] = data;
           if (bytes_received_ == MSPA_PACKET_LEN)
           {
+            uint8_t crc = 0;
+            for (int i = 0; i < (MSPA_PACKET_LEN - 1); i++)
+            {
+              crc += packet_[i];
+            }
+
+            if (crc != packet_[MSPA_PACKET_LEN - 1])
+            {
+              ESP_LOGE(TAG, "%s: Bad CRC, got 0x%02X, expected 0x%02X", name_, packet_[MSPA_PACKET_LEN - 1], crc);
+            } else {
+              handle_packet(packet_);
+            }
+
             state_ = states::WAITING_FOR_START_BYTE;
             bytes_received_ = 0;
-            if (handle_packet()) {
-              send_packet(packet_);
-            }
           }
           break;
         }

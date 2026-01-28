@@ -21,33 +21,23 @@ namespace esphome
       class MspaCom
       {
       public:
-        MspaCom(uart::UARTComponent *uart, MspaWifi *mspa, uint8_t uvc_command, const char *name)
-        { // Constructor with parameters
+        MspaCom(uart::UARTComponent *uart, const char* name)
+        {
           uart_ = uart;
-          mspa_ = mspa;
-          uvc_command_ = uvc_command;
           name_ = name;
           package_start_ = millis();
         }
-
-        bool handle_packet(void);
         void loop(void);
-        void set_target_water_temperature(float target);
-        void set_bubble_speed(uint8_t speed);
 
-        void set_heater(bool enabled);
-        void set_filter(bool enabled);
-        void set_ozone(bool enabled);
-        void set_uvc(bool enabled);
-
-        void send_packet(const uint8_t *packet);
+      protected:
         void fill_crc(uint8_t *packet);
+        void send_packet(const uint8_t *packet);
+        virtual void handle_packet(uint8_t *packet) = 0;
+        const char *name_{nullptr};
 
       private:
         uart::UARTComponent *uart_;
-        MspaWifi *mspa_;
-
-        uint8_t uvc_command_ = 0;
+        uint8_t packet_[4];
 
         enum class states
         {
@@ -60,9 +50,49 @@ namespace esphome
         };
         int bytes_received_;
         uint32_t package_start_;
-        uint8_t packet_[4];
-        const char *name_{nullptr};
       };
+      class MspaRemoteToBoxCom : public MspaCom
+      {
+      public:
+        MspaRemoteToBoxCom(uart::UARTComponent *uart, MspaWifi *mspa, uint8_t uvc_command, const char *name)
+          : MspaCom(uart, name)
+        {
+          mspa_ = mspa;
+          uvc_command_ = uvc_command;
+        }
+
+        void set_target_water_temperature(float target);
+        void set_bubble_speed(uint8_t speed);
+
+        void set_heater(bool enabled);
+        void set_filter(bool enabled);
+        void set_ozone(bool enabled);
+        void set_uvc(bool enabled);
+
+      protected:
+        void handle_packet(uint8_t *packet) override;
+
+      private:
+        MspaWifi *mspa_;
+
+        uint8_t uvc_command_ = 0;
+      };
+      class MspaBoxToRemoteCom : public MspaCom
+      {
+      public:
+        MspaBoxToRemoteCom(uart::UARTComponent *uart, MspaWifi *mspa, const char *name)
+          : MspaCom(uart, name)
+        {
+          mspa_ = mspa;
+        }
+
+      protected:
+        void handle_packet(uint8_t *packet) override;
+
+      private:
+        MspaWifi *mspa_;
+      };
+
       typedef struct {
         bool heater;
         bool filter;
@@ -109,8 +139,8 @@ namespace esphome
       number::Number *target_water_temperature_number_{nullptr};
       number::Number *target_bubble_speed_number_{nullptr};
 
-      MspaCom *mspa_box_to_remote_{nullptr};
-      MspaCom *mspa_remote_to_box_{nullptr};
+      MspaBoxToRemoteCom *mspa_box_to_remote_{nullptr};
+      MspaRemoteToBoxCom *mspa_remote_to_box_{nullptr};
     };
   }
 }
