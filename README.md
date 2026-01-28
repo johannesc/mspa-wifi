@@ -249,7 +249,7 @@ More examples:
 | 0x08    | Flow Report (sent each second)  |
 | 0x09    | ?                               |
 | 0x0A    | ?                               |
-| 0x0B    | Sent 1 / min from remote (value 0x00) which replies direct (with value 0x86) |
+| 0x0B    | Get/Report timer. Sent 1 / min from remote (value 0x00) filter pump replies direct with a value that increase for every hour |
 | 0x0C    | ?                               |
 | 0x0D    | Sent 8 times / min (7.5 s period) from remote |
 | 0x0E    | Set Ozone                       |
