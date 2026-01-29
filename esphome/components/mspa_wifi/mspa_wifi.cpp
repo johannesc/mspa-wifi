@@ -219,6 +219,7 @@ namespace esphome
       {
       case CMD_SET_TARGET_TEMP:
       {
+        // Target temp is fully controlled by HA
         float target_temperature = packet[2];
         if (mspa_->target_water_temperature_number_ != NULL) {
           mspa_->target_water_temperature_number_->publish_state(target_temperature);
@@ -228,17 +229,12 @@ namespace esphome
       }
       case CMD_SET_HEATER:
       {
+        // Heater state is fully controlled by HA
         bool heater_enabled = packet[2] == 0x01;
+        mspa_->remote_state_.heater = heater_enabled;
 
-        if (heater_enabled != mspa_->remote_state_.heater) {
-          // The heater has changed at the remote
-          // The remote is now "in control"
-          mspa_->remote_state_.heater = heater_enabled;
-          mspa_->actual_state_.heater = heater_enabled;
-          if (mspa_->heater_switch_) {
-            mspa_->heater_switch_->publish_state(mspa_->actual_state_.heater);
-          }
-        } else if (heater_enabled != mspa_->actual_state_.heater) {
+        // Overwrite command with HA state if different
+        if (heater_enabled != mspa_->actual_state_.heater) {
           packet[2] = mspa_->actual_state_.heater;
           fill_crc(packet);
         }
@@ -247,17 +243,12 @@ namespace esphome
       }
       case CMD_SET_FILTER:
       {
+        // Filter pump state is fully controlled by HA
         bool filter_enabled = packet[2] == 0x01;
-        if (filter_enabled != mspa_->remote_state_.filter) {
-          // The filter has changed at the remote
-          // The remote is now "in control"
-          mspa_->remote_state_.filter = filter_enabled;
-          mspa_->actual_state_.filter = filter_enabled;
-          if (mspa_->filter_pump_switch_ != NULL) {
-            mspa_->filter_pump_switch_->publish_state(mspa_->actual_state_.filter);
-          }
-        } else if (filter_enabled != mspa_->actual_state_.filter) {
-          // Overwrite command from the remote with the one set in HA
+        mspa_->remote_state_.filter = filter_enabled;
+
+        // Overwrite command with HA state if different
+        if (filter_enabled != mspa_->actual_state_.filter) {
           packet[2] = mspa_->actual_state_.filter;
           fill_crc(packet);
         }
