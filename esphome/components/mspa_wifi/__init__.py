@@ -38,6 +38,7 @@ LOCAL_CONF_FILTER_PUMP = "filter_pump"
 LOCAL_CONF_UVC = "uvc"
 LOCAL_CONF_OZONE = "ozone"
 LOCAL_CONF_HEATER = "heater"
+LOCAL_CONF_INFLATE = "inflate"
 
 LOCAL_CONF_TARGET_WATER_TEMPERATURE = "target_water_temperature"
 LOCAL_CONF_BUBBLE_SPEED = "bubble_speed"
@@ -125,6 +126,9 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional(LOCAL_CONF_HEATER): switch.switch_schema(
             MspaSwitch, icon=ICON_LIGHTBULB
         ),
+        cv.Optional(LOCAL_CONF_INFLATE): switch.switch_schema(
+            MspaSwitch, icon="mdi:pump"
+        ),
         cv.Optional(LOCAL_CONF_WATER_TEMPERATURE): WATER_TEMPERATURE_SCHEMA,
         cv.Optional(
             LOCAL_CONF_TARGET_WATER_TEMPERATURE
@@ -205,6 +209,7 @@ async def to_code(config):
             LOCAL_CONF_HEATER: "HEATER",
             LOCAL_CONF_UVC: "UVC",
             LOCAL_CONF_OZONE: "OZONE",
+            LOCAL_CONF_INFLATE: "INFLATE",
         }.items():
         sw = await switch.new_switch(config[conf])
         cg.add(getattr(var, f"set_{conf}_switch")(sw))

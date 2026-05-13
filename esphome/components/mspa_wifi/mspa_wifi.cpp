@@ -17,7 +17,7 @@
 #define CMD_GET_TIMER 0x0B
 #define CMD_SET_OZONE 0x0E
 #define CMD_SET_UNKNOWN_0D 0x0D
-#define CMD_SET_UNKNOWN_16 0x16
+#define CMD_SET_INFLATE 0x16
 
 #define TAG "MspaWifi"
 
@@ -71,6 +71,10 @@ namespace esphome
         set_filter(true); // UVC requires filter pump running, also enable that
       }
       mspa_remote_to_box_->set_uvc(enabled);
+    }
+
+    void MspaWifi::set_inflate(bool enabled) {
+      mspa_remote_to_box_->set_inflate(enabled);
     }
 
     void MspaWifi::set_target_water_temperature(float target)
@@ -149,6 +153,18 @@ namespace esphome
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, uvc_command_, data, 0};
+      fill_crc(packet);
+      send_packet(packet);
+    }
+
+    void MspaWifi::MspaRemoteToBoxCom::set_inflate(bool enabled)
+    {
+      ESP_LOGI(TAG, "Set inflate %s", enabled ? "ENABLE" : "DISABLE");
+      if (mspa_->inflate_switch_) {
+        mspa_->inflate_switch_->publish_state(enabled);
+      }
+      uint8_t data = enabled ? 1 : 0;
+      uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, CMD_SET_INFLATE, data, 0};
       fill_crc(packet);
       send_packet(packet);
     }
@@ -321,6 +337,21 @@ namespace esphome
       case CMD_GET_TIMER:
       {
         ESP_LOGI(TAG, "%s: Get timer", name_);
+        break;
+      }
+      case CMD_SET_UNKNOWN_0D:
+      {
+        bool unknown_enabled = packet[2] == 0x01;
+        ESP_LOGI(TAG, "%s: Set unknown %s", name_, unknown_enabled ? "true" : "false");
+        break;
+      }
+      case CMD_SET_INFLATE:
+      {
+        bool inflate_enabled = packet[2] == 0x01;
+        ESP_LOGI(TAG, "%s: Set inflate %s", name_, inflate_enabled ? "true" : "false");
+        if (mspa_->inflate_switch_) {
+          mspa_->inflate_switch_->publish_state(inflate_enabled);
+        }
         break;
       }
       default:

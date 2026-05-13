@@ -68,6 +68,7 @@ namespace esphome
         void set_filter(bool enabled);
         void set_ozone(bool enabled);
         void set_uvc(bool enabled);
+        void set_inflate(bool enabled);
 
       protected:
         void handle_packet(uint8_t *packet) override;
@@ -113,6 +114,7 @@ namespace esphome
       SUB_SWITCH(heater);
       SUB_SWITCH(uvc);
       SUB_SWITCH(ozone);
+      SUB_SWITCH(inflate);
 
     public:
       float get_setup_priority() const override { return setup_priority::LATE; }
@@ -132,6 +134,7 @@ namespace esphome
       void set_filter(bool enabled);
       void set_ozone(bool enabled);
       void set_uvc(bool enabled);
+      void set_inflate(bool enabled);
 
     private:
       uint8_t uvc_command_ = CMD_SET_UVC_ALT_2;

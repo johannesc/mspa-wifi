@@ -32,6 +32,10 @@ namespace esphome
                 ESP_LOGI(TAG, "Ozone enable %s", state ? "true" : "false");
                 mspa_->set_ozone(state);
                 break;
+            case MspaSwitchType::INFLATE:
+                ESP_LOGI(TAG, "Inflate enable %s", state ? "true" : "false");
+                mspa_->set_inflate(state);
+                break;
             default:
                 break;
             }

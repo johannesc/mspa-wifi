@@ -144,6 +144,10 @@ mspa_wifi:
             else:
               - script.stop: mspa_bubble_speed_auto_off
 
+  inflate:
+    name: "Inflate"
+    id: mspa_inflate
+
 script:
   - id: mspa_bubble_speed_auto_off
     mode: restart
