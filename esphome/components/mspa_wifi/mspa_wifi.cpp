@@ -326,12 +326,12 @@ namespace esphome
           if (mspa_->uvc_switch_) {
             mspa_->uvc_switch_->publish_state(mspa_->actual_state_.uvc);
           }
-        } else {
+        } else if (uvc_enabled != mspa_->actual_state_.uvc) {
           packet[2] = mspa_->actual_state_.uvc ? 0x01 : 0x00;
           fill_crc(packet);
         }
 
-        ESP_LOGI(TAG, "%s: UVC enabled: %s", name_, uvc_enabled ? "true" : "false");
+        ESP_LOGI(TAG, "%s: UVC enabled: %s", name_, mspa_->actual_state_.uvc ? "true" : "false");
         break;
       }
       case CMD_GET_TIMER:
