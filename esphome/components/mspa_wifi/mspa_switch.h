@@ -16,6 +16,7 @@ namespace esphome
       FILTER,
       UVC,
       OZONE,
+      JET,
       INFLATE,
     };
     typedef void (*set_state_func)();

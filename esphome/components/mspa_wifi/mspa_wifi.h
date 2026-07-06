@@ -11,6 +11,7 @@
 
 #define CMD_SET_UVC_ALT_1 0x10
 #define CMD_SET_UVC_ALT_2 0x15
+#define CMD_SET_JET_DEFAULT 0x0D
 
 namespace esphome
 {
@@ -54,11 +55,12 @@ namespace esphome
       class MspaRemoteToBoxCom : public MspaCom
       {
       public:
-        MspaRemoteToBoxCom(uart::UARTComponent *uart, MspaWifi *mspa, uint8_t uvc_command, const char *name)
+        MspaRemoteToBoxCom(uart::UARTComponent *uart, MspaWifi *mspa, uint8_t uvc_command, uint8_t jet_command, const char *name)
           : MspaCom(uart, name)
         {
           mspa_ = mspa;
           uvc_command_ = uvc_command;
+          jet_command_ = jet_command;
         }
 
         void set_target_water_temperature(float target);
@@ -68,6 +70,7 @@ namespace esphome
         void set_filter(bool enabled);
         void set_ozone(bool enabled);
         void set_uvc(bool enabled);
+        void set_jet(bool enabled);
         void set_inflate(bool enabled);
 
       protected:
@@ -77,6 +80,7 @@ namespace esphome
         MspaWifi *mspa_;
 
         uint8_t uvc_command_ = 0;
+        uint8_t jet_command_ = 0;
       };
       class MspaBoxToRemoteCom : public MspaCom
       {
@@ -100,6 +104,7 @@ namespace esphome
         uint8_t bubble;
         bool ozone;
         bool uvc;
+        bool jet;
       } mspa_state_t;
 
       mspa_state_t actual_state_ = {0};
@@ -114,6 +119,7 @@ namespace esphome
       SUB_SWITCH(heater);
       SUB_SWITCH(uvc);
       SUB_SWITCH(ozone);
+      SUB_SWITCH(jet);
       SUB_SWITCH(inflate);
 
     public:
@@ -126,6 +132,7 @@ namespace esphome
       void set_target_water_temperature_number(number::Number *number) { this->target_water_temperature_number_ = number; }
       void set_target_bubble_speed_number(number::Number *number) { this->target_bubble_speed_number_ = number; }
       void set_uvc_command(int command) { this->uvc_command_ = command; }
+      void set_jet_command(int command) { this->jet_command_ = command; }
 
       void set_target_water_temperature(float target);
       void set_bubble_speed(uint8_t speed);
@@ -134,10 +141,12 @@ namespace esphome
       void set_filter(bool enabled);
       void set_ozone(bool enabled);
       void set_uvc(bool enabled);
+      void set_jet(bool enabled);
       void set_inflate(bool enabled);
 
     private:
       uint8_t uvc_command_ = CMD_SET_UVC_ALT_2;
+      uint8_t jet_command_ = CMD_SET_JET_DEFAULT;
 
       number::Number *target_water_temperature_number_{nullptr};
       number::Number *target_bubble_speed_number_{nullptr};

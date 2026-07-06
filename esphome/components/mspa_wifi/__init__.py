@@ -29,6 +29,7 @@ LOCAL_CONF_UART_BOX_TO_REMOTE_ID = "uart_box_to_remote_id"
 LOCAL_CONF_UART_REMOTE_TO_BOX_ID = "uart_remote_to_box_id"
 
 LOCAL_CONV_UVC_COMMAND = "uvc_command"
+LOCAL_CONV_JET_COMMAND = "jet_command"
 
 LOCAL_CONF_FLOW_IN = "flow_in"
 LOCAL_CONF_FLOW_OUT = "flow_out"
@@ -38,6 +39,7 @@ LOCAL_CONF_FILTER_PUMP = "filter_pump"
 LOCAL_CONF_UVC = "uvc"
 LOCAL_CONF_OZONE = "ozone"
 LOCAL_CONF_HEATER = "heater"
+LOCAL_CONF_JET = "jet"
 LOCAL_CONF_INFLATE = "inflate"
 
 LOCAL_CONF_TARGET_WATER_TEMPERATURE = "target_water_temperature"
@@ -112,6 +114,7 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Required(LOCAL_CONF_UART_BOX_TO_REMOTE_ID): cv.use_id(uart.UARTComponent),
         cv.Required(LOCAL_CONF_UART_REMOTE_TO_BOX_ID): cv.use_id(uart.UARTComponent),
         cv.Optional(LOCAL_CONV_UVC_COMMAND, default=0x15): cv.one_of(0x10, 0x15, int),
+        cv.Optional(LOCAL_CONV_JET_COMMAND, default=0x0D): cv.hex_int_range(min=0x01, max=0xFF),
         cv.Optional(LOCAL_CONF_FLOW_IN): FLOW_IN_SCHEMA,
         cv.Optional(LOCAL_CONF_FLOW_OUT): FLOW_OUT_SCHEMA,
         cv.Optional(LOCAL_CONF_FILTER_PUMP): switch.switch_schema(
@@ -125,6 +128,9 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Optional(LOCAL_CONF_HEATER): switch.switch_schema(
             MspaSwitch, icon=ICON_LIGHTBULB
+        ),
+        cv.Optional(LOCAL_CONF_JET): switch.switch_schema(
+            MspaSwitch, icon="mdi:water-pump"
         ),
         cv.Optional(LOCAL_CONF_INFLATE): switch.switch_schema(
             MspaSwitch, icon="mdi:pump"
@@ -157,6 +163,9 @@ async def to_code(config):
     # Configuration
     if LOCAL_CONV_UVC_COMMAND in config:
         cg.add(var.set_uvc_command(config[LOCAL_CONV_UVC_COMMAND]))
+
+    if LOCAL_CONV_JET_COMMAND in config:
+        cg.add(var.set_jet_command(config[LOCAL_CONV_JET_COMMAND]))
 
     # Sensors
     if LOCAL_CONF_FLOW_IN in config:
@@ -209,6 +218,7 @@ async def to_code(config):
             LOCAL_CONF_HEATER: "HEATER",
             LOCAL_CONF_UVC: "UVC",
             LOCAL_CONF_OZONE: "OZONE",
+            LOCAL_CONF_JET: "JET",
             LOCAL_CONF_INFLATE: "INFLATE",
         }.items():
         sw = await switch.new_switch(config[conf])

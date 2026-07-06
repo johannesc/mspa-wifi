@@ -16,8 +16,9 @@
 #define CMD_SET_TARGET_TEMP 0x04
 #define CMD_GET_TIMER 0x0B
 #define CMD_SET_OZONE 0x0E
-#define CMD_SET_UNKNOWN_0D 0x0D
+#define CMD_SET_JET 0x0D
 #define CMD_SET_INFLATE 0x16
+#define CMD_JET_REPORT 0x18
 
 #define TAG "MspaWifi"
 
@@ -30,7 +31,7 @@ namespace esphome
     }
 
     void MspaWifi::set_remote_to_box_uart(uart::UARTComponent *remote_uart) {
-      mspa_remote_to_box_ = new MspaRemoteToBoxCom(remote_uart, this, uvc_command_, "<--");
+      mspa_remote_to_box_ = new MspaRemoteToBoxCom(remote_uart, this, uvc_command_, jet_command_, "<--");
     }
 
     void MspaWifi::MspaCom::fill_crc(uint8_t *packet)
@@ -71,6 +72,13 @@ namespace esphome
         set_filter(true); // UVC requires filter pump running, also enable that
       }
       mspa_remote_to_box_->set_uvc(enabled);
+    }
+
+    void MspaWifi::set_jet(bool enabled) {
+      if (enabled) {
+        set_filter(true); // Jet requires filter pump running, also enable that
+      }
+      mspa_remote_to_box_->set_jet(enabled);
     }
 
     void MspaWifi::set_inflate(bool enabled) {
@@ -122,6 +130,7 @@ namespace esphome
     {
       ESP_LOGI(TAG, "Set filter %s", enabled ? "ENABLE" : "DISABLE");
       mspa_->actual_state_.filter = enabled; // This will be used in handle_packet
+      mspa_->remote_state_.filter = enabled; // Keep in sync to prevent F1
       if (mspa_->filter_pump_switch_ != NULL) {
         mspa_->filter_pump_switch_->publish_state(mspa_->actual_state_.filter);
       }
@@ -153,6 +162,19 @@ namespace esphome
       }
       uint8_t data = enabled ? 1 : 0;
       uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, uvc_command_, data, 0};
+      fill_crc(packet);
+      send_packet(packet);
+    }
+
+    void MspaWifi::MspaRemoteToBoxCom::set_jet(bool enabled)
+    {
+      ESP_LOGI(TAG, "Set jet %s", enabled ? "ENABLE" : "DISABLE");
+      mspa_->actual_state_.jet = enabled; // This will be used in handle_packet
+      if (mspa_->jet_switch_) {
+        mspa_->jet_switch_->publish_state(mspa_->actual_state_.jet);
+      }
+      uint8_t data = enabled ? 1 : 0;
+      uint8_t packet[MSPA_PACKET_LEN] = {MSPA_START_BYTE, jet_command_, data, 0};
       fill_crc(packet);
       send_packet(packet);
     }
@@ -216,6 +238,12 @@ namespace esphome
       {
         ESP_LOGI(TAG, "%s: Timer report: %02X", name_, packet[2]);
         break;
+      }
+      case CMD_JET_REPORT:
+      {
+        ESP_LOGI(TAG, "%s: Jet report: %02X", name_, packet[2]);
+        // Don't forward to remote - it causes F1 when jets were activated from HA
+        return;
       }
       default:
       {
@@ -339,10 +367,22 @@ namespace esphome
         ESP_LOGI(TAG, "%s: Get timer", name_);
         break;
       }
-      case CMD_SET_UNKNOWN_0D:
+      case CMD_SET_JET:
       {
-        bool unknown_enabled = packet[2] == 0x01;
-        ESP_LOGI(TAG, "%s: Set unknown %s", name_, unknown_enabled ? "true" : "false");
+        bool jet_enabled = packet[2] == 0x01;
+        if (jet_enabled != mspa_->remote_state_.jet) {
+          // Jet was changed at the remote
+          // The remote is now "in control"
+          mspa_->remote_state_.jet = jet_enabled;
+          mspa_->actual_state_.jet = jet_enabled;
+          if (mspa_->jet_switch_) {
+            mspa_->jet_switch_->publish_state(mspa_->actual_state_.jet);
+          }
+        } else if (jet_enabled != mspa_->actual_state_.jet) {
+          packet[2] = mspa_->actual_state_.jet ? 0x01 : 0x00;
+          fill_crc(packet);
+        }
+        ESP_LOGI(TAG, "%s: Jet enabled: %s", name_, mspa_->actual_state_.jet ? "true" : "false");
         break;
       }
       case CMD_SET_INFLATE:

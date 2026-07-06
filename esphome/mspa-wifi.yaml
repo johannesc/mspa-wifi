@@ -81,6 +81,7 @@ mspa_wifi:
   uart_box_to_remote_id: uart_box_to_remote
   uart_remote_to_box_id: uart_remote_to_box
   uvc_command: 0x15
+  jet_command: 0x0D
 
   # Sensors
   water_temperature:
@@ -121,6 +122,10 @@ mspa_wifi:
   heater:
     id: mspa_heater
     name: "Heater"
+
+  jet:
+    name: "Jet"
+    id: mspa_jet_switch
 
   # Number controls
   target_water_temperature:
